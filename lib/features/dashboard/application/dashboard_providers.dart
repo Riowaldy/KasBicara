@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/date_utils.dart';
+import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
 import 'dashboard_models.dart';
@@ -23,6 +24,18 @@ final dashboardAvailableMonthsProvider = Provider<AsyncValue<List<String>>>((
       ..sort((a, b) => b.compareTo(a));
     return all;
   });
+});
+
+/// Transaksi mentah pada periode terpilih (tanpa filter kategori) — dipakai
+/// untuk ekspor Excel/PDF dari Dashboard (PRD §6.7).
+final periodTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
+  ref,
+) {
+  final txAsync = ref.watch(transactionsStreamProvider);
+  final period = ref.watch(dashboardPeriodProvider);
+  return txAsync.whenData(
+    (list) => list.where((t) => toMonthKey(t.date) == period).toList(),
+  );
 });
 
 /// Ringkasan pemasukan/pengeluaran/selisih periode terpilih.

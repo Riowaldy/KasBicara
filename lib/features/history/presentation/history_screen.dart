@@ -9,11 +9,14 @@ import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
 import '../../../shared/widgets/category_icons.dart';
+import '../../../shared/widgets/export_format_sheet.dart';
+import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
 
 /// Layar Riwayat Transaksi (PRD §6.6): dikelompokkan per tanggal (terbaru
-/// di atas), filter bulan & kategori, aksi edit/hapus.
+/// di atas), filter bulan & kategori, aksi edit/hapus, ekspor Excel/PDF
+/// (PRD §6.7) sesuai filter aktif.
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
@@ -22,7 +25,17 @@ class HistoryScreen extends ConsumerWidget {
     final filteredAsync = ref.watch(filteredTransactionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat')),
+      appBar: AppBar(
+        title: const Text('Riwayat'),
+        actions: [
+          IconButton(
+            key: const Key('export-button'),
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: 'Export laporan',
+            onPressed: () => _onExportTap(context, ref),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           const _FilterBar(),
@@ -46,6 +59,38 @@ class HistoryScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _onExportTap(BuildContext context, WidgetRef ref) async {
+    final format = await showExportFormatSheet(context);
+    if (format == null || !context.mounted) return;
+
+    final transactions = ref.read(filteredTransactionsProvider).value ?? [];
+    final monthFilter = ref.read(historyMonthFilterProvider);
+    final categoryFilter = ref.read(historyCategoryFilterProvider);
+    final categories = ref.read(categoriesProvider).value ?? [];
+
+    final monthLabelText = monthFilter != null
+        ? date_utils.monthLabel(monthFilter)
+        : 'Semua Bulan';
+    final categoryName = categoryFilter == null
+        ? null
+        : categories
+              .where((c) => c.id == categoryFilter)
+              .map((c) => c.name)
+              .firstOrNull;
+    final periodLabel = categoryName != null
+        ? '$monthLabelText · $categoryName'
+        : monthLabelText;
+
+    if (!context.mounted) return;
+    await exportTransactions(
+      context: context,
+      ref: ref,
+      transactions: transactions,
+      periodLabel: periodLabel,
+      format: format,
     );
   }
 }

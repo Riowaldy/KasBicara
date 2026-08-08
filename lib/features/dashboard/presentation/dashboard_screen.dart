@@ -8,11 +8,14 @@ import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../data/providers.dart';
 import '../../../shared/widgets/category_colors.dart';
 import '../../../shared/widgets/category_icons.dart';
+import '../../../shared/widgets/export_format_sheet.dart';
+import '../../export/application/export_controller.dart';
 import '../application/dashboard_models.dart';
 import '../application/dashboard_providers.dart';
 
 /// Layar Dashboard (PRD §6.5): saldo total, ringkasan periode, grafik
-/// donat distribusi kategori, grafik batang tren 6 bulan.
+/// donat distribusi kategori, grafik batang tren 6 bulan, serta ekspor
+/// Excel/PDF (PRD §6.7) sesuai periode terpilih.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -21,7 +24,17 @@ class DashboardScreen extends ConsumerWidget {
     final balanceAsync = ref.watch(balanceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          IconButton(
+            key: const Key('export-button'),
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: 'Export laporan',
+            onPressed: () => _onExportTap(context, ref),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -65,6 +78,24 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  Future<void> _onExportTap(BuildContext context, WidgetRef ref) async {
+    final format = await showExportFormatSheet(context);
+    if (format == null || !context.mounted) return;
+
+    final transactions = ref.read(periodTransactionsProvider).value ?? [];
+    final period = ref.read(dashboardPeriodProvider);
+    final periodLabel = date_utils.monthLabel(period);
+
+    if (!context.mounted) return;
+    await exportTransactions(
+      context: context,
+      ref: ref,
+      transactions: transactions,
+      periodLabel: periodLabel,
+      format: format,
     );
   }
 }
