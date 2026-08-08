@@ -30,14 +30,3 @@ final filteredTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
     }).toList(),
   );
 });
-
-/// Daftar bulan (`YYYY-MM`) yang benar-benar punya transaksi, terbaru dulu
-/// — dipakai mengisi opsi dropdown filter bulan.
-final availableMonthsProvider = Provider<AsyncValue<List<String>>>((ref) {
-  final txAsync = ref.watch(transactionsStreamProvider);
-  return txAsync.whenData((list) {
-    final months = list.map((t) => toMonthKey(t.date)).toSet().toList()
-      ..sort((a, b) => b.compareTo(a));
-    return months;
-  });
-});

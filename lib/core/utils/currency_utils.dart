@@ -17,6 +17,31 @@ int? parseRupiahDigits(String input) {
   return int.parse(digits);
 }
 
+/// Format ringkas untuk label sumbu grafik (mis. 1.500.000 -> "1,5jt",
+/// 500000 -> "500rb", 2000000 -> "2jt"). Tidak dipakai untuk nilai transaksi
+/// aktual (selalu presisi penuh via [formatRupiah]) — hanya label chart.
+String formatCompactRupiah(int amount) {
+  final abs = amount.abs();
+  final sign = amount < 0 ? '-' : '';
+  if (abs >= 1000000000) {
+    return '$sign${_trimTrailingZero(abs / 1000000000)}m';
+  }
+  if (abs >= 1000000) {
+    return '$sign${_trimTrailingZero(abs / 1000000)}jt';
+  }
+  if (abs >= 1000) {
+    return '$sign${_trimTrailingZero(abs / 1000)}rb';
+  }
+  return '$sign$abs';
+}
+
+String _trimTrailingZero(double value) {
+  final rounded = (value * 10).round() / 10;
+  return rounded == rounded.roundToDouble()
+      ? rounded.toInt().toString()
+      : rounded.toString().replaceAll('.', ',');
+}
+
 /// Kelompokkan digit [amount] dengan pemisah ribuan "." tanpa simbol mata
 /// uang (mis. 50000 -> "50.000"). Dipakai field input & prefill form.
 String groupThousands(int amount) {

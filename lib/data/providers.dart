@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 
+import '../core/utils/date_utils.dart';
 import 'datasources/app_database.dart';
 import 'models/category_model.dart';
 import 'models/transaction_model.dart';
@@ -62,3 +63,14 @@ final categoriesByTypeProvider =
       final repo = await ref.watch(categoryRepositoryProvider.future);
       return repo.getByType(type);
     });
+
+/// Daftar bulan (`YYYY-MM`) yang benar-benar punya transaksi, terbaru dulu
+/// — dipakai mengisi opsi dropdown filter bulan (Riwayat & Dashboard).
+final availableMonthsProvider = Provider<AsyncValue<List<String>>>((ref) {
+  final txAsync = ref.watch(transactionsStreamProvider);
+  return txAsync.whenData((list) {
+    final months = list.map((t) => toMonthKey(t.date)).toSet().toList()
+      ..sort((a, b) => b.compareTo(a));
+    return months;
+  });
+});
