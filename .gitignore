@@ -61,3 +61,4 @@ coverage/
 # ---- Dokumen internal (jangan ikut ter-push) ----
 PRD-KasBicara-Flutter.md
 DEVELOPMENT-PLAN.md
+store-assets
