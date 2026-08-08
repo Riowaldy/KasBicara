@@ -1,0 +1,58 @@
+# ---- Flutter/Dart ----
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.g.dart.bak
+
+# ---- Android ----
+android/**/gradle-wrapper.jar
+android/.gradle
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+*.keystore
+
+# ---- iOS/macOS ----
+ios/Flutter/.last_build_id
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Pods/
+ios/.symlinks/
+**/Pods/
+**/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# ---- Web ----
+web/.dart_tool/
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Env & secrets ----
+.env
+.env.*
+*.pem
+
+# ---- Logs & coverage ----
+*.log
+coverage/
+
+# ---- Dokumen internal (jangan ikut ter-push) ----
+PRD-KasBicara-Flutter.md
+DEVELOPMENT-PLAN.md

@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Pre-commit hook KasBicara: format check + analyze sebelum commit.
+# Aktifkan sekali per clone dengan:
+#   git config core.hooksPath .githooks
+
+set -e
+
+echo "Menjalankan dart format..."
+dart format --output=none --set-exit-if-changed .
+
+echo "Menjalankan flutter analyze..."
+flutter analyze
+
+echo "Pre-commit checks lolos."
