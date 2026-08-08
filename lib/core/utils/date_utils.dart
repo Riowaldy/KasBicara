@@ -18,3 +18,32 @@ String toMonthKey(DateTime date) {
   final m = date.month.toString().padLeft(2, '0');
   return '$y-$m';
 }
+
+const _indonesianMonths = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
+
+/// Label ramah-baca dari kunci bulan `YYYY-MM`, mis. "Agustus 2026".
+String monthLabel(String monthKey) {
+  final parts = monthKey.split('-');
+  final year = parts[0];
+  final month = int.parse(parts[1]);
+  return '${_indonesianMonths[month - 1]} $year';
+}
+
+/// Label tanggal ramah-baca, mis. "8 Agustus 2026" — dipakai sebagai
+/// header pengelompokan riwayat transaksi per tanggal.
+String dateLabel(DateTime date) {
+  return '${date.day} ${_indonesianMonths[date.month - 1]} ${date.year}';
+}
