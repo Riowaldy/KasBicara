@@ -26,6 +26,11 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Dibutuhkan speech_to_text (Fase 3, PRD §6.1) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>KasBicara membutuhkan akses mikrofon untuk mencatat transaksi lewat suara.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>KasBicara menggunakan pengenalan suara untuk mengubah ucapan Anda menjadi catatan transaksi.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

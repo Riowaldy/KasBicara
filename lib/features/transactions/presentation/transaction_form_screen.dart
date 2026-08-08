@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../core/utils/id_generator.dart';
+import '../../../core/voice_parser.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
@@ -13,13 +14,18 @@ import '../../../shared/widgets/rupiah_input_formatter.dart';
 
 /// Kartu konfirmasi/edit transaksi (PRD §6.2 & §6.3).
 ///
-/// Dipakai untuk dua alur: tambah manual ([initial] null) dan edit
-/// transaksi tersimpan ([initial] terisi). Field yang sama juga akan
-/// menampung hasil parsing suara di Fase 3 lewat parameter [initial]/draft.
+/// Dipakai untuk tiga alur: tambah manual (keduanya null), edit transaksi
+/// tersimpan ([initial] terisi), dan konfirmasi hasil suara ([voiceDraft]
+/// terisi, Fase 3) — [initial] dan [voiceDraft] tidak pernah diisi bersamaan.
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, this.initial});
+  const TransactionFormScreen({super.key, this.initial, this.voiceDraft})
+    : assert(
+        initial == null || voiceDraft == null,
+        'initial (edit) dan voiceDraft (tambah via suara) tidak boleh bersamaan',
+      );
 
   final Transaction? initial;
+  final VoiceParseResult? voiceDraft;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -36,19 +42,37 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _categoryId;
   bool _saving = false;
 
+  /// True jika amount berasal dari draft suara yang TIDAK yakin — field
+  /// dibiarkan kosong & diberi highlight lembut (PRD §12), bukan ditebak.
+  bool _amountNeedsAttention = false;
+
   bool get _isEditing => widget.initial != null;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initial;
-    _type = initial?.type ?? TransactionType.keluar;
+    final draft = widget.voiceDraft;
+
+    _type = initial?.type ?? draft?.type ?? TransactionType.keluar;
     _date = date_utils.dateOnly(initial?.date ?? DateTime.now());
-    _categoryId = initial?.category;
-    _amountController = TextEditingController(
-      text: initial != null ? groupThousands(initial.amount) : '',
+    _categoryId = initial?.category ?? draft?.category;
+    _noteController = TextEditingController(
+      text: initial?.note ?? draft?.note ?? '',
     );
-    _noteController = TextEditingController(text: initial?.note ?? '');
+
+    if (initial != null) {
+      _amountController = TextEditingController(
+        text: groupThousands(initial.amount),
+      );
+    } else if (draft != null && draft.amountConfident && draft.amount != null) {
+      _amountController = TextEditingController(
+        text: groupThousands(draft.amount!),
+      );
+    } else {
+      _amountController = TextEditingController();
+      _amountNeedsAttention = draft != null; // ada draft tapi jumlah tak yakin
+    }
   }
 
   @override
@@ -70,6 +94,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              if (widget.voiceDraft != null) ...[
+                _buildVoiceReferenceCard(widget.voiceDraft!),
+                const SizedBox(height: 20),
+              ],
               _buildTypeToggle(),
               const SizedBox(height: 20),
               _buildAmountField(),
@@ -83,6 +111,37 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               _buildActions(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceReferenceCard(VoiceParseResult draft) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.mic_rounded, size: 18, color: AppColors.gold),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hasil pengenalan suara',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '"${draft.rawTranscript}"',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -128,7 +187,26 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       controller: _amountController,
       keyboardType: TextInputType.number,
       inputFormatters: [RupiahInputFormatter()],
-      decoration: const InputDecoration(labelText: 'Jumlah', prefixText: 'Rp '),
+      autofocus: _amountNeedsAttention,
+      decoration: InputDecoration(
+        labelText: 'Jumlah',
+        prefixText: 'Rp ',
+        helperText: _amountNeedsAttention
+            ? 'Tidak terdeteksi dari suara, isi manual'
+            : null,
+        helperStyle: const TextStyle(color: AppColors.gold),
+        enabledBorder: _amountNeedsAttention
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+              )
+            : null,
+      ),
+      onChanged: (_) {
+        if (_amountNeedsAttention) {
+          setState(() => _amountNeedsAttention = false);
+        }
+      },
       validator: (value) {
         final amount = parseRupiahDigits(value ?? '');
         if (amount == null || amount <= 0) {
