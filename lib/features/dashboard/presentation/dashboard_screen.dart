@@ -156,7 +156,10 @@ class _PeriodSummaryRow extends ConsumerWidget {
             Expanded(
               child: _StatTile(
                 icon: Icons.arrow_downward_rounded,
-                label: l10n.labelIncome,
+                // Label singkat ("Masuk", bukan "Pemasukan") — di tile
+                // sesempit 1/3 layar, kata penuh terpotong ellipsis di
+                // device sungguhan (QA Fase 7). Reuse string formTypeIn.
+                label: l10n.formTypeIn,
                 value: summary.income,
                 // *Text varian: nilai di tile ini teks biasa (AA 4.5:1).
                 color: AppColors.incomeText,
@@ -166,7 +169,7 @@ class _PeriodSummaryRow extends ConsumerWidget {
             Expanded(
               child: _StatTile(
                 icon: Icons.arrow_upward_rounded,
-                label: l10n.labelExpense,
+                label: l10n.formTypeOut,
                 value: summary.expense,
                 color: AppColors.expenseText,
               ),
@@ -206,18 +209,27 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        // Padding lebih rapat (10 bukan 12) — 3 tile sejajar di 1/3 layar
+        // sangat sempit (QA Fase 7, device sungguhan).
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 4),
+                Icon(icon, size: 13, color: color),
+                const SizedBox(width: 3),
                 Expanded(
                   child: Text(
                     label,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    // Sedikit lebih kecil dari bodyMedium (14sp) sebagai
+                    // margin aman tambahan — label sendiri sudah dipendekkan
+                    // ("Masuk"/"Keluar"/"Selisih"), font 12sp masih nyaman
+                    // dibaca, bukan cuma pas-pasan seperti sebelum fix ini.
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

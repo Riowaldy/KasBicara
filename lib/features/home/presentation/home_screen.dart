@@ -50,7 +50,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 48),
             _MicButton(state: voiceState, onTap: _onMicTap),
             const SizedBox(height: 16),
-            SizedBox(height: 48, child: _buildStatusLine(voiceState, l10n)),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: _buildStatusLine(voiceState, l10n),
+            ),
             TextButton(
               onPressed: () => _openManualForm(context),
               child: Text(l10n.homeAddManual),
@@ -84,6 +87,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: Theme.of(context).textTheme.bodyMedium,
         );
       case VoiceInputStatus.idle:
+        // Contoh ucapan agar pengguna tidak bingung mau bilang apa — hilang
+        // begitu mic mulai mendengarkan (transcript live mengambil alih).
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.homeVoiceExampleTitle,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.homeVoiceExampleExpense,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+              ),
+              Text(
+                l10n.homeVoiceExampleIncome,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        );
       case VoiceInputStatus.done:
       case VoiceInputStatus.unavailable:
       case VoiceInputStatus.error:

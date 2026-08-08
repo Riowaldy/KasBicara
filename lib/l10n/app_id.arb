@@ -17,6 +17,9 @@
   "micIdleLabel": "Catat transaksi lewat suara. Ketuk untuk mulai bicara.",
   "micListeningLabel": "Sedang mendengarkan. Ketuk untuk berhenti.",
   "micBusyLabel": "Menyiapkan mikrofon",
+  "homeVoiceExampleTitle": "Contoh ucapan:",
+  "homeVoiceExampleExpense": "\"keluar lima puluh ribu untuk makan siang\"",
+  "homeVoiceExampleIncome": "\"masuk dua ratus ribu dari gaji\"",
 
   "historyTitle": "Riwayat",
   "historyEmpty": "Belum ada transaksi",
