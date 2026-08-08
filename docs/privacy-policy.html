@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kebijakan Privasi — KasBicara</title>
+<style>
+  :root {
+    --paper: #faf7f1;
+    --surface: #ffffff;
+    --ink: #1b2a3f;
+    --ink-muted: #57616f;
+    --gold: #9c7a2e;
+    --border: #e6e0d4;
+    --income: #2e7d4f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0b1e3d;
+      --surface: #122b52;
+      --ink: #f7f1e4;
+      --ink-muted: #9fb0c9;
+      --gold: #e3b463;
+      --border: #2c4c7c;
+      --income: #4c9a6b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0b1e3d;
+    --surface: #122b52;
+    --ink: #f7f1e4;
+    --ink-muted: #9fb0c9;
+    --gold: #e3b463;
+    --border: #2c4c7c;
+    --income: #4c9a6b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  header.doc-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mark-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .mark-badge svg { width: 18px; height: 18px; }
+  .mark-name {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: clamp(28px, 5vw, 38px);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 4px 0 0;
+    text-wrap: balance;
+  }
+
+  .meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 22px 24px;
+    margin-bottom: 44px;
+  }
+  .summary h2 {
+    margin: 0 0 12px;
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .summary ul {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .summary li { font-size: 15px; }
+  .summary strong { color: var(--ink); }
+
+  nav.toc {
+    margin-bottom: 48px;
+  }
+  nav.toc ol {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    columns: 2;
+    column-gap: 24px;
+  }
+  nav.toc li { margin-bottom: 6px; break-inside: avoid; }
+  nav.toc a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid transparent;
+  }
+  nav.toc a:hover, nav.toc a:focus-visible {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  section {
+    margin-bottom: 40px;
+    scroll-margin-top: 24px;
+  }
+  section h2 {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  section h2 .num {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+  }
+  section p { margin: 0 0 14px; font-size: 15.5px; max-width: 62ch; }
+  section p:last-child { margin-bottom: 0; }
+  section ul { margin: 0 0 14px; padding-left: 22px; max-width: 62ch; }
+  section li { font-size: 15.5px; margin-bottom: 6px; }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 18px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px 5px 10px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--income);
+    flex: none;
+  }
+
+  footer.doc-foot {
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+  footer.doc-foot a { color: var(--gold); }
+
+  a { color: var(--gold); }
+
+  @media (max-width: 520px) {
+    nav.toc ol { columns: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc-head">
+    <div class="mark">
+      <span class="mark-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" stroke="#0b1e3d" stroke-width="1.6"/>
+          <path d="M7 11v1a5 5 0 0 0 10 0v-1M12 19v2" stroke="#0b1e3d" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="mark-name">KasBicara</span>
+    </div>
+    <h1>Kebijakan Privasi</h1>
+    <span class="meta">Berlaku sejak 8 Agustus 2026</span>
+  </header>
+
+  <div class="summary">
+    <h2>Ringkasan singkat</h2>
+    <ul>
+      <li><strong>Data keuangan Anda disimpan hanya di perangkat Anda</strong>, terenkripsi — tidak ada server KasBicara yang menyimpan atau melihatnya.</li>
+      <li><strong>Tidak ada akun/login</strong> — KasBicara tidak mengenal identitas Anda.</li>
+      <li><strong>Mikrofon dipakai sekadar mengubah ucapan jadi teks</strong> transaksi — audio tidak disimpan oleh KasBicara.</li>
+      <li><strong>Tidak dijual atau dibagikan ke pihak ketiga.</strong> Data hanya keluar dari perangkat kalau Anda sendiri menekan tombol ekspor/bagikan.</li>
+      <li><strong>Hapus aplikasi = hapus semua data</strong> — tidak ada salinan tersimpan di tempat lain.</li>
+    </ul>
+  </div>
+
+  <nav class="toc" aria-label="Daftar isi">
+    <ol>
+      <li><a href="#data-dikumpulkan">1. Data yang Kami Kumpulkan</a></li>
+      <li><a href="#penggunaan-data">2. Bagaimana Data Digunakan</a></li>
+      <li><a href="#penyimpanan-keamanan">3. Penyimpanan &amp; Keamanan</a></li>
+      <li><a href="#mikrofon-suara">4. Akses Mikrofon &amp; Pengenalan Suara</a></li>
+      <li><a href="#berbagi-data">5. Berbagi Data</a></li>
+      <li><a href="#hak-anda">6. Hak Anda atas Data</a></li>
+      <li><a href="#anak">7. Privasi Anak</a></li>
+      <li><a href="#perubahan">8. Perubahan Kebijakan Ini</a></li>
+      <li><a href="#kontak">9. Kontak</a></li>
+    </ol>
+  </nav>
+
+  <section id="data-dikumpulkan">
+    <h2><span class="num">01</span>Data yang Kami Kumpulkan</h2>
+    <p>KasBicara mencatat transaksi keuangan yang Anda masukkan sendiri, baik lewat suara maupun ketik manual. Data yang tersimpan hanya:</p>
+    <ul>
+      <li>Jenis transaksi (masuk/keluar), jumlah, kategori, keterangan, dan tanggal.</li>
+      <li>Kategori transaksi (bawaan aplikasi atau yang Anda buat sendiri).</li>
+    </ul>
+    <p>KasBicara <strong>tidak meminta nama, email, nomor telepon, lokasi, kontak, atau identitas pribadi lain</strong> untuk bisa dipakai — tidak ada proses pendaftaran akun sama sekali.</p>
+  </section>
+
+  <section id="penggunaan-data">
+    <h2><span class="num">02</span>Bagaimana Data Digunakan</h2>
+    <p>Data transaksi yang Anda catat dipakai semata-mata untuk menjalankan fungsi aplikasi di perangkat Anda sendiri: menghitung saldo, menampilkan riwayat, menyusun grafik ringkasan di Dashboard, dan menyiapkan file ekspor Excel/PDF ketika diminta.</p>
+    <p>KasBicara tidak memakai data Anda untuk iklan, analitik pihak ketiga, atau pelatihan model apa pun. Tidak ada SDK pelacak (tracking) yang tertanam di aplikasi ini.</p>
+  </section>
+
+  <section id="penyimpanan-keamanan">
+    <h2><span class="num">03</span>Penyimpanan &amp; Keamanan</h2>
+    <div class="badge-row">
+      <span class="badge"><span class="dot"></span>Lokal di perangkat</span>
+      <span class="badge"><span class="dot"></span>Terenkripsi (AES, SQLCipher)</span>
+      <span class="badge"><span class="dot"></span>Tanpa server KasBicara</span>
+    </div>
+    <p>Seluruh data transaksi disimpan dalam database terenkripsi (SQLCipher) langsung di penyimpanan internal perangkat Anda. Kunci enkripsinya sendiri disimpan lewat mekanisme keamanan sistem operasi (Android Keystore) — bukan di dalam kode aplikasi maupun dikirim ke mana pun.</p>
+    <p>Karena tidak ada server backend, KasBicara secara teknis tidak memiliki cara untuk mengakses data Anda dari luar perangkat Anda.</p>
+  </section>
+
+  <section id="mikrofon-suara">
+    <h2><span class="num">04</span>Akses Mikrofon &amp; Pengenalan Suara</h2>
+    <p>Saat Anda menekan tombol mikrofon, KasBicara meminta izin mikrofon untuk merekam ucapan Anda secara sementara dan mengubahnya menjadi teks, memakai layanan pengenalan suara bawaan sistem operasi perangkat Anda (mesin speech-to-text Android/iOS).</p>
+    <p>Bergantung pada pengaturan perangkat, proses pengubahan suara-ke-teks ini bisa berjalan sepenuhnya di perangkat (on-device) atau memakai layanan cloud milik penyedia sistem operasi (mis. Google) — ini di luar kendali KasBicara, dan tunduk pada kebijakan privasi penyedia sistem operasi tersebut, bukan kebijakan ini.</p>
+    <p>KasBicara sendiri <strong>tidak merekam maupun menyimpan file audio Anda</strong>. Hanya teks hasil transkripsi yang diproses sesaat untuk mengisi draf transaksi — dan teks itu pun tidak disimpan terpisah, hanya dipakai untuk mengisi field yang kemudian Anda konfirmasi atau ubah sebelum disimpan sebagai transaksi.</p>
+  </section>
+
+  <section id="berbagi-data">
+    <h2><span class="num">05</span>Berbagi Data</h2>
+    <p>KasBicara tidak pernah mengirim data Anda ke pihak mana pun secara otomatis. Satu-satunya cara data keluar dari aplikasi adalah ketika <strong>Anda sendiri</strong> menekan tombol "Export Excel" atau "Export PDF", lalu memilih tujuan berbagi lewat menu bagikan bawaan perangkat (mis. email, WhatsApp, Google Drive).</p>
+    <p>Begitu file itu Anda bagikan lewat aplikasi lain, penggunaan selanjutnya tunduk pada kebijakan privasi aplikasi/layanan tujuan tersebut, bukan kebijakan ini.</p>
+  </section>
+
+  <section id="hak-anda">
+    <h2><span class="num">06</span>Hak Anda atas Data</h2>
+    <p>Karena semua data ada di perangkat Anda, Anda memegang kendali penuh:</p>
+    <ul>
+      <li>Hapus transaksi kapan saja langsung dari layar Riwayat.</li>
+      <li>Hapus seluruh data sekaligus dengan mencopot pemasangan (uninstall) aplikasi — tidak ada salinan yang tertinggal di server mana pun, karena memang tidak ada server.</li>
+    </ul>
+  </section>
+
+  <section id="anak">
+    <h2><span class="num">07</span>Privasi Anak</h2>
+    <p>KasBicara tidak ditujukan untuk anak di bawah 13 tahun dan tidak dirancang untuk mengumpulkan data dari mereka secara sadar. Karena aplikasi ini tidak meminta data pribadi apa pun dan tidak memiliki fitur akun, risiko pengumpulan data anak secara tidak sengaja sangat minim.</p>
+  </section>
+
+  <section id="perubahan">
+    <h2><span class="num">08</span>Perubahan Kebijakan Ini</h2>
+    <p>Jika suatu saat KasBicara menambah fitur yang mengubah cara data ditangani (misalnya sinkronisasi cloud opsional di versi mendatang), kebijakan ini akan diperbarui dan tanggal "Berlaku sejak" di atas akan disesuaikan sebelum fitur tersebut aktif.</p>
+  </section>
+
+  <section id="kontak">
+    <h2><span class="num">09</span>Kontak</h2>
+    <p>Ada pertanyaan soal kebijakan privasi ini? Hubungi kami di <a href="mailto:cloud@myatria.co.id">cloud@myatria.co.id</a>.</p>
+  </section>
+
+  <footer class="doc-foot">
+    KasBicara — aplikasi pencatatan keuangan berbasis suara. Dokumen ini adalah bagian dari data listing KasBicara di Google Play Store.
+  </footer>
+</div>
+</body>
+</html>
