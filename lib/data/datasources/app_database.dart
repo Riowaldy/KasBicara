@@ -23,7 +23,18 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   Database? _db;
-  final _secureStorage = const FlutterSecureStorage();
+
+  // Opsi dibuat EKSPLISIT (bukan cuma andalkan default paket) agar postur
+  // keamanan terdokumentasi & tidak diam-diam berubah kalau versi paket
+  // naik. Android: AndroidOptions() default sudah AES-GCM + RSA-OAEP lewat
+  // Keystore (Fase 6 hardening — dicek: sudah kuat sejak v11, tak perlu
+  // encryptedSharedPreferences manual seperti versi lama). iOS: accessible
+  // hanya saat perangkat ter-unlock (KeychainAccessibility.unlocked) — pas
+  // untuk app foreground-only tanpa proses background.
+  final _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(),
+    iOptions: IOSOptions(),
+  );
 
   Future<Database> get database async {
     return _db ??= await _open();

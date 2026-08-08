@@ -9,6 +9,7 @@ import '../../../core/voice_parser.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/rupiah_input_formatter.dart';
 
@@ -84,9 +85,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Transaksi' : 'Tambah Transaksi'),
+        title: Text(_isEditing ? l10n.formEditTitle : l10n.formAddTitle),
       ),
       body: SafeArea(
         child: Form(
@@ -130,7 +132,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hasil pengenalan suara',
+                    AppLocalizations.of(context)!.formVoiceReferenceTitle,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
@@ -148,18 +150,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Widget _buildTypeToggle() {
+    final l10n = AppLocalizations.of(context)!;
     return SegmentedButton<TransactionType>(
       key: const Key('type-toggle'),
-      segments: const [
+      segments: [
         ButtonSegment(
           value: TransactionType.keluar,
-          label: Text('Keluar'),
-          icon: Icon(Icons.arrow_upward_rounded),
+          label: Text(l10n.formTypeOut),
+          icon: const Icon(Icons.arrow_upward_rounded),
         ),
         ButtonSegment(
           value: TransactionType.masuk,
-          label: Text('Masuk'),
-          icon: Icon(Icons.arrow_downward_rounded),
+          label: Text(l10n.formTypeIn),
+          icon: const Icon(Icons.arrow_downward_rounded),
         ),
       ],
       selected: {_type},
@@ -170,18 +173,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           _categoryId = null;
         });
       },
+      // Latar SOLID (bukan tint transparan) + teks navy: tint 25% di atas
+      // income/expense hanya ~3:1, di bawah ambang teks WCAG AA 4.5:1.
       style: SegmentedButton.styleFrom(
         selectedBackgroundColor: _type == TransactionType.masuk
-            ? AppColors.income.withValues(alpha: 0.25)
-            : AppColors.expense.withValues(alpha: 0.25),
-        selectedForegroundColor: _type == TransactionType.masuk
-            ? AppColors.income
-            : AppColors.expense,
+            ? AppColors.incomeText
+            : AppColors.expenseText,
+        selectedForegroundColor: AppColors.inkBackground,
       ),
     );
   }
 
   Widget _buildAmountField() {
+    final l10n = AppLocalizations.of(context)!;
     return TextFormField(
       key: const Key('amount-field'),
       controller: _amountController,
@@ -189,11 +193,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       inputFormatters: [RupiahInputFormatter()],
       autofocus: _amountNeedsAttention,
       decoration: InputDecoration(
-        labelText: 'Jumlah',
+        labelText: l10n.formAmountLabel,
         prefixText: 'Rp ',
-        helperText: _amountNeedsAttention
-            ? 'Tidak terdeteksi dari suara, isi manual'
-            : null,
+        helperText: _amountNeedsAttention ? l10n.formAmountHelperVoice : null,
         helperStyle: const TextStyle(color: AppColors.gold),
         enabledBorder: _amountNeedsAttention
             ? OutlineInputBorder(
@@ -210,7 +212,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       validator: (value) {
         final amount = parseRupiahDigits(value ?? '');
         if (amount == null || amount <= 0) {
-          return 'Jumlah harus lebih dari 0';
+          return l10n.formAmountError;
         }
         return null;
       },
@@ -222,7 +224,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       key: const Key('date-field'),
       onTap: _pickDate,
       child: InputDecorator(
-        decoration: const InputDecoration(labelText: 'Tanggal'),
+        decoration: InputDecoration(
+          labelText: AppLocalizations.of(context)!.formDateLabel,
+        ),
         child: Text(date_utils.toDateString(_date)),
       ),
     );
@@ -241,6 +245,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Widget _buildCategoryField() {
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesByTypeProvider(_type));
 
     return categoriesAsync.when(
@@ -257,7 +262,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return DropdownButtonFormField<String>(
           key: const Key('category-dropdown'),
           initialValue: validIds.contains(_categoryId) ? _categoryId : null,
-          decoration: const InputDecoration(labelText: 'Kategori'),
+          decoration: InputDecoration(labelText: l10n.formCategoryLabel),
           items: categories
               .map(
                 (c) => DropdownMenuItem(
@@ -274,7 +279,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               )
               .toList(),
           onChanged: (value) => setState(() => _categoryId = value),
-          validator: (value) => value == null ? 'Pilih kategori' : null,
+          validator: (value) => value == null ? l10n.formCategoryError : null,
         );
       },
     );
@@ -284,18 +289,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return TextFormField(
       key: const Key('note-field'),
       controller: _noteController,
-      decoration: const InputDecoration(labelText: 'Keterangan (opsional)'),
+      decoration: InputDecoration(
+        labelText: AppLocalizations.of(context)!.formNoteLabel,
+      ),
       maxLines: 2,
     );
   }
 
   Widget _buildActions() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: _saving ? null : () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+            child: Text(l10n.actionCancel),
           ),
         ),
         const SizedBox(width: 12),
@@ -309,7 +317,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Simpan'),
+                : Text(l10n.actionSave),
           ),
         ),
       ],

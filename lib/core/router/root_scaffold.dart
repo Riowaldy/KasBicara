@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Kerangka navigasi utama: bottom nav 3 tab (Beranda, Riwayat, Dashboard).
 class RootScaffold extends StatefulWidget {
@@ -19,23 +20,25 @@ class _RootScaffoldState extends State<RootScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.mic_none_rounded),
-            label: 'Beranda',
+            icon: const Icon(Icons.mic_none_rounded),
+            label: l10n.navBeranda,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: 'Riwayat',
+            icon: const Icon(Icons.receipt_long_rounded),
+            label: l10n.navRiwayat,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart_rounded),
-            label: 'Dashboard',
+            icon: const Icon(Icons.pie_chart_rounded),
+            label: l10n.navDashboard,
           ),
         ],
       ),

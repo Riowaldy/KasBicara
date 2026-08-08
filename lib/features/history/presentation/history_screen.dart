@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -8,11 +9,13 @@ import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
 import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
+import '../application/transaction_grouping.dart';
 
 /// Layar Riwayat Transaksi (PRD §6.6): dikelompokkan per tanggal (terbaru
 /// di atas), filter bulan & kategori, aksi edit/hapus, ekspor Excel/PDF
@@ -22,16 +25,17 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final filteredAsync = ref.watch(filteredTransactionsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat'),
+        title: Text(l10n.historyTitle),
         actions: [
           IconButton(
             key: const Key('export-button'),
             icon: const Icon(Icons.ios_share_rounded),
-            tooltip: 'Export laporan',
+            tooltip: l10n.exportTooltip,
             onPressed: () => _onExportTap(context, ref),
           ),
         ],
@@ -48,7 +52,7 @@ class HistoryScreen extends ConsumerWidget {
                 if (transactions.isEmpty) {
                   return Center(
                     child: Text(
-                      'Belum ada transaksi',
+                      l10n.historyEmpty,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   );
@@ -73,7 +77,7 @@ class HistoryScreen extends ConsumerWidget {
 
     final monthLabelText = monthFilter != null
         ? date_utils.monthLabel(monthFilter)
-        : 'Semua Bulan';
+        : AppLocalizations.of(context)!.exportAllMonths;
     final categoryName = categoryFilter == null
         ? null
         : categories
@@ -100,6 +104,7 @@ class _FilterBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final monthsAsync = ref.watch(availableMonthsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final selectedMonth = ref.watch(historyMonthFilterProvider);
@@ -118,9 +123,11 @@ class _FilterBar extends ConsumerWidget {
                   key: const Key('month-filter'),
                   initialValue: selectedMonth,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Bulan'),
+                  decoration: InputDecoration(
+                    labelText: l10n.historyMonthLabel,
+                  ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Semua')),
+                    DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
                     ...months.map(
                       (m) => DropdownMenuItem(
                         value: m,
@@ -145,9 +152,11 @@ class _FilterBar extends ConsumerWidget {
                   key: const Key('category-filter'),
                   initialValue: selectedCategory,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Kategori'),
+                  decoration: InputDecoration(
+                    labelText: l10n.historyCategoryLabel,
+                  ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Semua')),
+                    DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
                     ...categories.map(
                       (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
                     ),
@@ -172,30 +181,29 @@ class _GroupedTransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // transactions sudah terurut tanggal terbaru -> terlama dari repository.
-    final groups = <String, List<Transaction>>{};
-    for (final t in transactions) {
-      groups.putIfAbsent(date_utils.toDateString(t.date), () => []).add(t);
-    }
+    // Diratakan jadi satu List<Object> (header tanggal diselingi transaksi)
+    // lalu dirender via ListView.builder — bukan ListView(children: ...)
+    // yang membangun SEMUA widget di muka. Penting di ±10.000 transaksi
+    // (NFR skalabilitas data, PRD §8): builder hanya me-render item yang
+    // benar-benar terlihat + sedikit buffer.
+    final items = groupTransactionsForList(transactions);
 
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 24),
-      children: groups.entries.map((entry) {
-        final date = entry.value.first.date;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(
-                date_utils.dateLabel(date),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        if (item is DateTime) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              date_utils.dateLabel(item),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            ...entry.value.map((t) => _TransactionTile(transaction: t)),
-          ],
-        );
-      }).toList(),
+          );
+        }
+        return _TransactionTile(transaction: item as Transaction);
+      },
     );
   }
 }
@@ -207,6 +215,7 @@ class _TransactionTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesProvider);
     final categoryName = categoriesAsync.maybeWhen(
       data: (categories) => categories
@@ -224,61 +233,83 @@ class _TransactionTile extends ConsumerWidget {
     );
 
     final isIncome = transaction.type == TransactionType.masuk;
-    final amountColor = isIncome ? AppColors.income : AppColors.expense;
+    // *Text varian (bukan income/expense polos) — nominal ini teks biasa,
+    // butuh kontras AA 4.5:1, bukan cuma ambang grafis 3:1.
+    final amountColor = isIncome ? AppColors.incomeText : AppColors.expenseText;
     final sign = isIncome ? '+' : '-';
 
-    return Dismissible(
-      key: ValueKey('tx-${transaction.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        color: AppColors.error,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete_rounded, color: Colors.white),
-      ),
-      confirmDismiss: (_) => _confirmDelete(context),
-      onDismissed: (_) async {
-        final repo = await ref.read(transactionRepositoryProvider.future);
-        await repo.delete(transaction.id);
+    // Swipe-to-delete tidak bisa dilakukan pengguna screen reader — sediakan
+    // aksi aksesibel setara lewat customSemanticsActions (muncul di menu
+    // aksi TalkBack/VoiceOver), memakai alur konfirmasi yang sama.
+    return Semantics(
+      customSemanticsActions: {
+        CustomSemanticsAction(label: l10n.actionDeleteTransaction): () =>
+            _deleteWithConfirmation(context, ref),
       },
-      child: ListTile(
-        key: Key('tx-tile-${transaction.id}'),
-        leading: CircleAvatar(
-          backgroundColor: AppColors.inkSurfaceAlt,
-          child: Icon(
-            iconForCategoryKey(categoryIconKey ?? 'other'),
-            color: AppColors.gold,
+      child: Dismissible(
+        key: ValueKey('tx-${transaction.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: const Icon(Icons.delete_rounded, color: Colors.white),
+        ),
+        confirmDismiss: (_) => _confirmDelete(context),
+        onDismissed: (_) async {
+          final repo = await ref.read(transactionRepositoryProvider.future);
+          await repo.delete(transaction.id);
+        },
+        child: ListTile(
+          key: Key('tx-tile-${transaction.id}'),
+          leading: CircleAvatar(
+            backgroundColor: AppColors.inkSurfaceAlt,
+            child: Icon(
+              iconForCategoryKey(categoryIconKey ?? 'other'),
+              color: AppColors.gold,
+            ),
           ),
-        ),
-        title: Text(categoryName ?? transaction.category),
-        subtitle: transaction.note != null ? Text(transaction.note!) : null,
-        trailing: Text(
-          '$sign${formatRupiah(transaction.amount)}',
-          style: TextStyle(color: amountColor, fontWeight: FontWeight.w600),
-        ),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TransactionFormScreen(initial: transaction),
+          title: Text(categoryName ?? transaction.category),
+          subtitle: transaction.note != null ? Text(transaction.note!) : null,
+          trailing: Text(
+            '$sign${formatRupiah(transaction.amount)}',
+            style: TextStyle(color: amountColor, fontWeight: FontWeight.w600),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TransactionFormScreen(initial: transaction),
+            ),
           ),
         ),
       ),
     );
   }
 
+  Future<void> _deleteWithConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await _confirmDelete(context);
+    if (!confirmed) return;
+    final repo = await ref.read(transactionRepositoryProvider.future);
+    await repo.delete(transaction.id);
+  }
+
   Future<bool> _confirmDelete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus transaksi?'),
-        content: const Text('Transaksi yang dihapus tidak dapat dikembalikan.'),
+        title: Text(l10n.historyDeleteConfirmTitle),
+        content: Text(l10n.historyDeleteConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),

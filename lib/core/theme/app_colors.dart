@@ -16,14 +16,26 @@ abstract final class AppColors {
   static const Color gold = Color(0xFFE3B463);
   static const Color goldMuted = Color(0xFFC79A4E);
 
-  // Semantik transaksi
+  // Semantik transaksi — dipakai untuk elemen GRAFIS (ikon, isian bar/pie
+  // chart, dot legenda): lolos ambang non-teks WCAG AA 3:1 di atas
+  // inkBackground/inkSurface, tapi TIDAK cukup untuk teks biasa (4.5:1).
   static const Color income = Color(0xFF4C9A6B);
   static const Color expense = Color(0xFFC1573B);
+
+  // Varian "aman-teks" — versi income/expense yang sedikit lebih terang,
+  // lolos kontras teks WCAG AA 4.5:1 di atas inkBackground & inkSurface.
+  // Pakai ini untuk TEKS (nominal transaksi, dsb), bukan [income]/[expense].
+  static const Color incomeText = Color(0xFF51A472);
+  static const Color expenseText = Color(0xFFD17E68);
 
   // Teks di atas dasar gelap
   static const Color textPrimary = Color(0xFFF7F1E4);
   static const Color textMuted = Color(0xFF9FB0C9);
 
-  // Status
+  // Status — [error] untuk elemen grafis besar (mis. latar swipe-hapus
+  // dengan ikon putih di atasnya); [errorText] untuk teks (pesan validasi
+  // form via ColorScheme.error) agar tetap lolos kontras AA 4.5:1 di atas
+  // inkSurfaceAlt (fill TextField).
   static const Color error = Color(0xFFE0563A);
+  static const Color errorText = Color(0xFFEA8B78);
 }

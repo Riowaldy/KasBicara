@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/voice_parser.dart';
 import '../../../data/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/voice_input_controller.dart';
 
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final balanceAsync = ref.watch(balanceProvider);
     final voiceState = ref.watch(voiceInputControllerProvider);
 
@@ -42,16 +44,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Saldo saat ini',
+              l10n.homeBalanceLabel,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 48),
             _MicButton(state: voiceState, onTap: _onMicTap),
             const SizedBox(height: 16),
-            SizedBox(height: 48, child: _buildStatusLine(voiceState)),
+            SizedBox(height: 48, child: _buildStatusLine(voiceState, l10n)),
             TextButton(
               onPressed: () => _openManualForm(context),
-              child: const Text('Tambah manual'),
+              child: Text(l10n.homeAddManual),
             ),
           ],
         ),
@@ -59,18 +61,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildStatusLine(VoiceInputState state) {
+  Widget _buildStatusLine(VoiceInputState state, AppLocalizations l10n) {
     switch (state.status) {
       case VoiceInputStatus.initializing:
         return Text(
-          'Menyiapkan mikrofon...',
+          l10n.homePreparingMic,
           style: Theme.of(context).textTheme.bodyMedium,
         );
       case VoiceInputStatus.listening:
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
-            state.transcript.isEmpty ? 'Mendengarkan...' : state.transcript,
+            state.transcript.isEmpty ? l10n.homeListening : state.transcript,
             key: const Key('voice-transcript'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
@@ -78,7 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       case VoiceInputStatus.processing:
         return Text(
-          'Memproses...',
+          l10n.homeProcessing,
           style: Theme.of(context).textTheme.bodyMedium,
         );
       case VoiceInputStatus.idle:
@@ -107,6 +109,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     VoiceInputState? previous,
     VoiceInputState next,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (next.status == VoiceInputStatus.unavailable ||
         next.status == VoiceInputStatus.error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -125,13 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (transcript.isEmpty) {
         controller.reset();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Tidak ada ucapan terdeteksi. Coba lagi atau isi manual.',
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.homeNoSpeechDetected)));
         return;
       }
 
@@ -164,41 +164,54 @@ class _MicButton extends StatelessWidget {
       state.status == VoiceInputStatus.initializing ||
       state.status == VoiceInputStatus.processing;
 
+  String _semanticLabel(AppLocalizations l10n) {
+    if (_isBusy) return l10n.micBusyLabel;
+    if (_isListening) return l10n.micListeningLabel;
+    return l10n.micIdleLabel;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      key: const Key('mic-button'),
-      onTap: _isBusy ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          color: _isListening ? AppColors.expense : AppColors.gold,
-          shape: BoxShape.circle,
-          boxShadow: _isListening
-              ? [
-                  BoxShadow(
-                    color: AppColors.expense.withValues(alpha: 0.5),
-                    blurRadius: 24,
-                    spreadRadius: 4,
+    final l10n = AppLocalizations.of(context)!;
+
+    return Semantics(
+      button: true,
+      enabled: !_isBusy,
+      label: _semanticLabel(l10n),
+      child: GestureDetector(
+        key: const Key('mic-button'),
+        onTap: _isBusy ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            color: _isListening ? AppColors.expense : AppColors.gold,
+            shape: BoxShape.circle,
+            boxShadow: _isListening
+                ? [
+                    BoxShadow(
+                      color: AppColors.expense.withValues(alpha: 0.5),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ]
+                : null,
+          ),
+          child: _isBusy
+              ? const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: CircularProgressIndicator(
+                    color: AppColors.inkBackground,
+                    strokeWidth: 3,
                   ),
-                ]
-              : null,
-        ),
-        child: _isBusy
-            ? const Padding(
-                padding: EdgeInsets.all(28),
-                child: CircularProgressIndicator(
+                )
+              : Icon(
+                  _isListening ? Icons.stop_rounded : Icons.mic,
+                  size: 40,
                   color: AppColors.inkBackground,
-                  strokeWidth: 3,
                 ),
-              )
-            : Icon(
-                _isListening ? Icons.stop_rounded : Icons.mic,
-                size: 40,
-                color: AppColors.inkBackground,
-              ),
+        ),
       ),
     );
   }

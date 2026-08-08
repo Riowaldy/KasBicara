@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/transaction_model.dart';
 import '../../../data/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import 'excel_export_service.dart';
 import 'export_data.dart';
 import 'export_share_service.dart';
@@ -20,13 +21,10 @@ Future<void> exportTransactions({
   required ExportFormat format,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context)!;
 
   if (transactions.isEmpty) {
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Tidak ada transaksi untuk diekspor pada filter ini.'),
-      ),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(l10n.exportEmptyWarning)));
     return;
   }
 

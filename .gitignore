@@ -8,6 +8,11 @@
 build/
 *.g.dart.bak
 
+# Hasil generate `flutter gen-l10n` dari lib/l10n/app_id.arb (generate:true
+# di pubspec.yaml membuatnya ulang otomatis saat pub get/build).
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart
+
 # ---- Android ----
 android/**/gradle-wrapper.jar
 android/.gradle

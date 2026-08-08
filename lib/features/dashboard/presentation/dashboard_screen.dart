@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../data/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_colors.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
@@ -21,16 +22,17 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final balanceAsync = ref.watch(balanceProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(l10n.dashboardTitle),
         actions: [
           IconButton(
             key: const Key('export-button'),
             icon: const Icon(Icons.ios_share_rounded),
-            tooltip: 'Export laporan',
+            tooltip: l10n.exportTooltip,
             onPressed: () => _onExportTap(context, ref),
           ),
         ],
@@ -42,7 +44,7 @@ class DashboardScreen extends ConsumerWidget {
             child: Column(
               children: [
                 Text(
-                  'Saldo Total',
+                  l10n.dashboardBalanceTotal,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 4),
@@ -63,14 +65,14 @@ class DashboardScreen extends ConsumerWidget {
           const _PeriodSummaryRow(),
           const SizedBox(height: 32),
           Text(
-            'Distribusi Pengeluaran',
+            l10n.dashboardCategoryDistribution,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           const _CategoryDonutChart(),
           const SizedBox(height: 32),
           Text(
-            'Tren 6 Bulan Terakhir',
+            l10n.dashboardTrend,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
@@ -115,7 +117,9 @@ class _PeriodSelector extends ConsumerWidget {
         return DropdownButtonFormField<String>(
           key: const Key('dashboard-period'),
           initialValue: months.contains(selected) ? selected : null,
-          decoration: const InputDecoration(labelText: 'Periode'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context)!.dashboardPeriodLabel,
+          ),
           items: months
               .map(
                 (m) => DropdownMenuItem(
@@ -140,6 +144,7 @@ class _PeriodSummaryRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final summaryAsync = ref.watch(periodSummaryProvider);
 
     return summaryAsync.when(
@@ -151,29 +156,30 @@ class _PeriodSummaryRow extends ConsumerWidget {
             Expanded(
               child: _StatTile(
                 icon: Icons.arrow_downward_rounded,
-                label: 'Pemasukan',
+                label: l10n.labelIncome,
                 value: summary.income,
-                color: AppColors.income,
+                // *Text varian: nilai di tile ini teks biasa (AA 4.5:1).
+                color: AppColors.incomeText,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _StatTile(
                 icon: Icons.arrow_upward_rounded,
-                label: 'Pengeluaran',
+                label: l10n.labelExpense,
                 value: summary.expense,
-                color: AppColors.expense,
+                color: AppColors.expenseText,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _StatTile(
                 icon: Icons.balance_rounded,
-                label: 'Selisih',
+                label: l10n.labelBalanceDiff,
                 value: summary.balance,
                 color: summary.balance >= 0
-                    ? AppColors.income
-                    : AppColors.expense,
+                    ? AppColors.incomeText
+                    : AppColors.expenseText,
               ),
             ),
           ],
@@ -247,7 +253,7 @@ class _CategoryDonutChart extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                'Belum ada pengeluaran pada periode ini',
+                AppLocalizations.of(context)!.dashboardNoExpenseThisPeriod,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -422,8 +428,9 @@ class _TrendBarChart extends ConsumerWidget {
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final isIncome = rodIndex == 0;
+                        final l10n = AppLocalizations.of(context)!;
                         return BarTooltipItem(
-                          '${isIncome ? 'Pemasukan' : 'Pengeluaran'}\n${formatRupiah(rod.toY.round())}',
+                          '${isIncome ? l10n.labelIncome : l10n.labelExpense}\n${formatRupiah(rod.toY.round())}',
                           const TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 11,
@@ -516,12 +523,13 @@ class _TrendLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _legendDot(context, AppColors.income, 'Pemasukan'),
+        _legendDot(context, AppColors.income, l10n.labelIncome),
         const SizedBox(width: 20),
-        _legendDot(context, AppColors.expense, 'Pengeluaran'),
+        _legendDot(context, AppColors.expense, l10n.labelExpense),
       ],
     );
   }

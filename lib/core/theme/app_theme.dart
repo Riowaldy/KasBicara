@@ -12,11 +12,15 @@ abstract final class AppTheme {
       primary: AppColors.gold,
       onPrimary: AppColors.inkBackground,
       secondary: AppColors.income,
-      onSecondary: AppColors.textPrimary,
+      // Navy (bukan cream) di atas secondary/error — cream hanya 3.0:1 di
+      // atas income/errorText, di bawah ambang teks WCAG AA 4.5:1.
+      onSecondary: AppColors.inkBackground,
       surface: AppColors.inkSurface,
       onSurface: AppColors.textPrimary,
-      error: AppColors.error,
-      onError: AppColors.textPrimary,
+      // errorText (bukan error) — [error] dikhususkan untuk elemen grafis
+      // besar (lihat app_colors.dart); teks butuh varian yang lebih terang.
+      error: AppColors.errorText,
+      onError: AppColors.inkBackground,
     );
 
     return ThemeData(
