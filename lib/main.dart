@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/root_scaffold.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
+import 'core/language/language_providers.dart';
 
 // Sengaja tidak ada kerja berat/sinkron di sini sebelum frame pertama
 // (NFR PRD §8: buka aplikasi < 2 detik). Database terenkripsi baru dibuka
@@ -14,20 +15,33 @@ void main() {
   runApp(const ProviderScope(child: KasBicaraApp()));
 }
 
-class KasBicaraApp extends StatelessWidget {
+class KasBicaraApp extends ConsumerWidget {
   const KasBicaraApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Bahasa aktif dari satu sumber kebenaran (konsep "Trilingual KasBicara"
+    // §03): pilihan user -> deteksi (mode auto) -> locale perangkat -> id.
+    final language = ref.watch(activeLanguageProvider);
+
     return MaterialApp(
       title: 'KasBicara',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      // Bahasa Indonesia sebagai default (PRD §8 NFR Lokalisasi) — juga
-      // melokalkan widget bawaan Flutter (mis. showDatePicker) ke id_ID,
-      // bukan cuma teks kustom kita sendiri.
-      locale: const Locale('id'),
+      locale: language.locale,
       supportedLocales: AppLocalizations.supportedLocales,
+      // Peta varian locale perangkat ke tiga bahasa yang didukung: id* -> id,
+      // ms* -> ms, selain itu -> en (pengguna di luar regional ID/MY).
+      localeResolutionCallback: (locale, supportedLocales) {
+        switch (locale?.languageCode) {
+          case 'id':
+            return const Locale('id');
+          case 'ms':
+            return const Locale('ms');
+          default:
+            return const Locale('en');
+        }
+      },
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasbicara/core/voice_parser.dart';
+import 'package:kasbicara/core/voice/id_voice_parser.dart';
 import 'package:kasbicara/data/models/transaction_type.dart';
 
 void main() {
-  const parser = VoiceParser();
+  const parser = IdVoiceParser();
 
   group('Pola umum FR-2: [jenis] [jumlah] untuk/buat [keterangan]', () {
     test('keluar + angka kata + untuk + keterangan', () {

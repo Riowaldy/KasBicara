@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../core/utils/id_generator.dart';
-import '../../../core/voice_parser.dart';
+import '../../../core/voice/voice_parser.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';

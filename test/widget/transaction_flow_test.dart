@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasbicara/core/language/language_providers.dart';
 import 'package:kasbicara/data/datasources/default_categories.dart';
 import 'package:kasbicara/data/providers.dart';
 import 'package:kasbicara/main.dart';
@@ -13,6 +14,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // Pin bahasa ke Indonesia (host test memakai locale en-US, yang
+          // kini otomatis memilih English — lihat activeLanguageProvider).
+          deviceLocaleProvider.overrideWithValue(const Locale('id')),
           transactionRepositoryProvider.overrideWith(
             (ref) async => FakeTransactionRepository(),
           ),

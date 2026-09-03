@@ -60,5 +60,17 @@
   "formCategoryError": "Pilih kategori",
   "formNoteLabel": "Keterangan (opsional)",
   "actionSave": "Simpan",
-  "formVoiceReferenceTitle": "Hasil pengenalan suara"
+  "formVoiceReferenceTitle": "Hasil pengenalan suara",
+
+  "settingsLanguage": "Bahasa",
+  "settingsLanguageAuto": "Otomatis",
+  "settingsLanguageTooltip": "Pengaturan bahasa",
+  "languageNameId": "Bahasa Indonesia",
+  "languageNameMs": "Bahasa Melayu",
+  "languageNameEn": "Bahasa Inggris",
+  "languageDetectedSnack": "Bahasa diubah ke {name}",
+  "@languageDetectedSnack": {
+    "description": "Pemberitahuan saat detektor mengganti bahasa otomatis",
+    "placeholders": {"name": {"type": "String"}}
+  }
 }

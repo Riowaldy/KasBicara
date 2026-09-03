@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/language/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
-import '../../../core/voice_parser.dart';
+import '../../../core/voice/voice_parser_provider.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../settings/presentation/language_dialog.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/voice_input_controller.dart';
 
@@ -29,7 +31,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listen(voiceInputControllerProvider, _handleVoiceStateChange);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('KasBicara')),
+      appBar: AppBar(
+        title: const Text('KasBicara'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language_rounded),
+            tooltip: l10n.settingsLanguageTooltip,
+            onPressed: () => showLanguageDialog(context, ref),
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -167,7 +178,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      final draft = const VoiceParser().parse(transcript);
+      // Deteksi (mode auto) mungkin sudah mengganti bahasa aktif — beri tahu
+      // pengguna sebelum draft dibuka (konsep §05 langkah 4).
+      final detected = next.detectedLanguage;
+      if (detected != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.languageDetectedSnack(_languageName(detected, l10n)),
+            ),
+          ),
+        );
+      }
+
+      final draft = ref.read(voiceParserProvider).parse(transcript);
       Navigator.of(context)
           .push(
             MaterialPageRoute(
@@ -182,6 +206,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const TransactionFormScreen()));
+  }
+
+  String _languageName(AppLanguage language, AppLocalizations l10n) {
+    switch (language) {
+      case AppLanguage.id:
+        return l10n.languageNameId;
+      case AppLanguage.ms:
+        return l10n.languageNameMs;
+      case AppLanguage.en:
+        return l10n.languageNameEn;
+    }
   }
 }
 
