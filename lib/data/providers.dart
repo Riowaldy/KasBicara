@@ -4,9 +4,11 @@ import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 import '../core/utils/date_utils.dart';
 import 'datasources/app_database.dart';
 import 'models/category_model.dart';
+import 'models/pocket_model.dart';
 import 'models/transaction_model.dart';
 import 'models/transaction_type.dart';
 import 'repositories/category_repository.dart';
+import 'repositories/pocket_repository.dart';
 import 'repositories/transaction_repository.dart';
 
 /// Koneksi database terenkripsi (dibuka sekali, di-cache oleh [AppDatabase]).
@@ -30,6 +32,14 @@ final categoryRepositoryProvider = FutureProvider<CategoryRepository>((
   return SqfliteCategoryRepository(db);
 });
 
+/// Repository pocket (konsep "Pocket KasBicara" §05).
+final pocketRepositoryProvider = FutureProvider<PocketRepository>((ref) async {
+  final db = await ref.watch(databaseProvider.future);
+  final repo = SqflitePocketRepository(db);
+  ref.onDispose(repo.dispose);
+  return repo;
+});
+
 /// Seluruh transaksi, reaktif — otomatis terupdate setiap ada
 /// create/update/delete (FR-6). Dikonsumsi Beranda, Riwayat, & Dashboard.
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((
@@ -39,15 +49,49 @@ final transactionsStreamProvider = StreamProvider<List<Transaction>>((
   yield* repo.watchAll();
 });
 
-/// Saldo total (akumulasi semua transaksi) — PRD §6.5.
+/// Seluruh pocket, reaktif — dikonsumsi selector header, dropdown form,
+/// & layar Kelola Pocket.
+final pocketsStreamProvider = StreamProvider<List<Pocket>>((ref) async* {
+  final repo = await ref.watch(pocketRepositoryProvider.future);
+  yield* repo.watchAll();
+});
+
+/// Konteks pocket aktif — SUMBER KEBENARAN TUNGGAL (konsep §05, sejajar
+/// dengan `activeLanguageProvider`). `null` = "Semua Pocket" (agregat,
+/// perilaku identik dengan aplikasi sebelum fitur pocket). Menyetir Saldo,
+/// Riwayat, Dashboard, & nilai awal field pocket di form.
+final activePocketProvider = StateProvider<String?>((ref) => null);
+
+/// Saldo — menghormati [activePocketProvider]: `null` = akumulasi semua
+/// transaksi (PRD §6.5), selain itu hanya pocket terpilih.
 final balanceProvider = Provider<AsyncValue<int>>((ref) {
   final txAsync = ref.watch(transactionsStreamProvider);
+  final activePocket = ref.watch(activePocketProvider);
   return txAsync.whenData(
-    (list) => list.fold<int>(
-      0,
-      (sum, t) =>
-          sum + (t.type == TransactionType.masuk ? t.amount : -t.amount),
-    ),
+    (list) => list
+        .where((t) => activePocket == null || t.pocketId == activePocket)
+        .fold<int>(
+          0,
+          (sum, t) =>
+              sum + (t.type == TransactionType.masuk ? t.amount : -t.amount),
+        ),
+  );
+});
+
+/// Saldo satu pocket tertentu — dipakai layar Kelola Pocket.
+final pocketBalanceProvider = Provider.family<AsyncValue<int>, String>((
+  ref,
+  pocketId,
+) {
+  final txAsync = ref.watch(transactionsStreamProvider);
+  return txAsync.whenData(
+    (list) => list
+        .where((t) => t.pocketId == pocketId)
+        .fold<int>(
+          0,
+          (sum, t) =>
+              sum + (t.type == TransactionType.masuk ? t.amount : -t.amount),
+        ),
   );
 });
 

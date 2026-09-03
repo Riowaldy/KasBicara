@@ -55,9 +55,36 @@
   "formDateLabel": "Tarikh",
   "formCategoryLabel": "Kategori",
   "formCategoryError": "Pilih kategori",
+  "formPocketLabel": "Poket",
+  "formPocketError": "Pilih poket",
   "formNoteLabel": "Catatan (pilihan)",
   "actionSave": "Simpan",
+  "actionAdd": "Tambah",
   "formVoiceReferenceTitle": "Hasil pengecaman suara",
+
+  "pocketMainName": "Poket Utama",
+  "pocketSelectorAll": "Semua Poket",
+  "pocketManageTitle": "Urus Poket",
+  "pocketManageTooltip": "Urus poket",
+  "pocketManageHint": "Tahan dan seret untuk menyusun semula. Poket Utama sentiasa di atas dan tidak boleh dipadam.",
+  "pocketAddTitle": "Tambah Poket",
+  "pocketEditTitle": "Ubah Poket",
+  "pocketNameLabel": "Nama poket",
+  "pocketNameError": "Nama poket wajib diisi",
+  "pocketIconLabel": "Ikon",
+  "pocketEmpty": "Belum ada poket tambahan. Ketik \"Tambah Poket\" untuk membuat.",
+  "pocketDeleteConfirmTitle": "Padam poket?",
+  "pocketDeleteConfirmEmpty": "Poket \"{name}\" akan dipadam.",
+  "@pocketDeleteConfirmEmpty": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transaksi dalam poket \"{name}\" akan dipindahkan ke Poket Utama, kemudian poket dipadam.}}",
+  "@pocketDeleteConfirmReassign": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
 
   "settingsLanguage": "Bahasa",
   "settingsLanguageAuto": "Automatik",

@@ -125,7 +125,7 @@ pw.Widget _buildTransactionsTable(ExportData data) {
   }
 
   return pw.TableHelper.fromTextArray(
-    headers: ['Tanggal', 'Tipe', 'Kategori', 'Keterangan', 'Jumlah'],
+    headers: ['Tanggal', 'Tipe', 'Pocket', 'Kategori', 'Keterangan', 'Jumlah'],
     headerStyle: pw.TextStyle(
       fontSize: 9,
       fontWeight: pw.FontWeight.bold,
@@ -133,14 +133,15 @@ pw.Widget _buildTransactionsTable(ExportData data) {
     ),
     headerDecoration: const pw.BoxDecoration(color: _pdfNavy),
     cellStyle: const pw.TextStyle(fontSize: 9),
-    cellAlignments: const {4: pw.Alignment.centerRight},
-    headerAlignments: const {4: pw.Alignment.centerRight},
+    cellAlignments: const {5: pw.Alignment.centerRight},
+    headerAlignments: const {5: pw.Alignment.centerRight},
     cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
     data: data.transactions.map((t) {
       final isIncome = t.type == TransactionType.masuk;
       return [
         date_utils.toDateString(t.date),
         isIncome ? 'Masuk' : 'Keluar',
+        data.pocketNameFor(t),
         data.categoryNameFor(t),
         t.note ?? '-',
         '${isIncome ? '+' : '-'}${formatRupiah(t.amount)}',

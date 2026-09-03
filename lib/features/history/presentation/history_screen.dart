@@ -12,6 +12,7 @@ import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
+import '../../../shared/widgets/pocket_selector.dart';
 import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
@@ -42,6 +43,8 @@ class HistoryScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          const SizedBox(height: 8),
+          const PocketSelector(),
           const _FilterBar(),
           const Divider(height: 1),
           Expanded(
@@ -74,6 +77,8 @@ class HistoryScreen extends ConsumerWidget {
     final monthFilter = ref.read(historyMonthFilterProvider);
     final categoryFilter = ref.read(historyCategoryFilterProvider);
     final categories = ref.read(categoriesProvider).value ?? [];
+    final activePocket = ref.read(activePocketProvider);
+    final pockets = ref.read(pocketsStreamProvider).valueOrNull ?? const [];
 
     final monthLabelText = monthFilter != null
         ? date_utils.monthLabel(monthFilter)
@@ -84,9 +89,14 @@ class HistoryScreen extends ConsumerWidget {
               .where((c) => c.id == categoryFilter)
               .map((c) => c.name)
               .firstOrNull;
-    final periodLabel = categoryName != null
-        ? '$monthLabelText · $categoryName'
-        : monthLabelText;
+    final pocketName = activePocket == null
+        ? null
+        : pockets
+              .where((p) => p.id == activePocket)
+              .map((p) => pocketDisplayName(p, AppLocalizations.of(context)!))
+              .firstOrNull;
+    final labelParts = [monthLabelText, ?categoryName, ?pocketName];
+    final periodLabel = labelParts.join(' · ');
 
     if (!context.mounted) return;
     await exportTransactions(
@@ -217,6 +227,14 @@ class _TransactionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesProvider);
+    // Nama pocket hanya ditampilkan saat konteks "Semua Pocket" (konsep §08).
+    final showPocketName = ref.watch(activePocketProvider) == null;
+    final pocketName = showPocketName
+        ? (ref.watch(pocketsStreamProvider).valueOrNull ?? const [])
+              .where((p) => p.id == transaction.pocketId)
+              .map((p) => pocketDisplayName(p, l10n))
+              .firstOrNull
+        : null;
     final categoryName = categoriesAsync.maybeWhen(
       data: (categories) => categories
           .where((c) => c.id == transaction.category)
@@ -270,7 +288,7 @@ class _TransactionTile extends ConsumerWidget {
             ),
           ),
           title: Text(categoryName ?? transaction.category),
-          subtitle: transaction.note != null ? Text(transaction.note!) : null,
+          subtitle: _buildSubtitle(pocketName, transaction.note),
           trailing: Text(
             '$sign${formatRupiah(transaction.amount)}',
             style: TextStyle(color: amountColor, fontWeight: FontWeight.w600),
@@ -282,6 +300,23 @@ class _TransactionTile extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Subtitle baris: nama pocket (hanya di konteks "Semua Pocket") di atas
+  /// keterangan. `null` bila keduanya kosong.
+  Widget? _buildSubtitle(String? pocketName, String? note) {
+    if (pocketName == null && note == null) return null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (pocketName != null)
+          Text(
+            pocketName,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          ),
+        if (note != null) Text(note),
+      ],
     );
   }
 

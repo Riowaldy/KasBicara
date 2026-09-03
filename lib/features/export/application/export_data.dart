@@ -12,10 +12,15 @@ class ExportData {
     required this.transactions,
     required this.categoriesById,
     required this.periodLabel,
+    this.pocketNamesById = const {},
   });
 
   final List<Transaction> transactions;
   final Map<String, Category> categoriesById;
+
+  /// Nama pocket per id — sudah terlokalisasi oleh pemanggil (Pocket Utama
+  /// dirender dari l10n). Konsep "Pocket KasBicara" §08.
+  final Map<String, String> pocketNamesById;
 
   /// Deskripsi filter aktif untuk ditampilkan di laporan, mis. "Agustus
   /// 2026" atau "Agustus 2026 · Makanan & Minuman".
@@ -23,6 +28,9 @@ class ExportData {
 
   String categoryNameFor(Transaction t) =>
       categoriesById[t.category]?.name ?? t.category;
+
+  String pocketNameFor(Transaction t) =>
+      pocketNamesById[t.pocketId] ?? t.pocketId;
 
   int get totalIncome => transactions
       .where((t) => t.type == TransactionType.masuk)

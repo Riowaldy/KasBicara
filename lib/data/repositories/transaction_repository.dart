@@ -17,6 +17,14 @@ abstract class TransactionRepository {
   /// [monthKey] berformat `YYYY-MM` (lihat `core/utils/date_utils.dart`).
   Future<List<Transaction>> getFiltered({String? monthKey, String? category});
 
+  /// Pindahkan semua transaksi dari satu pocket ke pocket lain — dipakai
+  /// sebelum menghapus pocket (konsep "Pocket KasBicara" §06). Memancarkan
+  /// perubahan ke [watchAll] agar UI ikut ter‑refresh.
+  Future<void> reassignPocket({
+    required String fromPocketId,
+    required String toPocketId,
+  });
+
   /// Stream reaktif — memancarkan ulang daftar transaksi setiap ada
   /// create/update/delete. Dipakai dashboard (Fase 4) agar auto-update (FR-6).
   Stream<List<Transaction>> watchAll();
@@ -54,6 +62,20 @@ class SqfliteTransactionRepository implements TransactionRepository {
   @override
   Future<void> delete(String id) async {
     await _db.delete(_table, where: 'id = ?', whereArgs: [id]);
+    _notify();
+  }
+
+  @override
+  Future<void> reassignPocket({
+    required String fromPocketId,
+    required String toPocketId,
+  }) async {
+    await _db.update(
+      _table,
+      {'pocket_id': toPocketId},
+      where: 'pocket_id = ?',
+      whereArgs: [fromPocketId],
+    );
     _notify();
   }
 

@@ -7,6 +7,8 @@ import '../../../core/utils/currency_utils.dart';
 import '../../../core/voice/voice_parser_provider.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/pocket_selector.dart';
+import '../../pockets/presentation/pocket_manage_screen.dart';
 import '../../settings/presentation/language_dialog.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/voice_input_controller.dart';
@@ -27,13 +29,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final balanceAsync = ref.watch(balanceProvider);
     final voiceState = ref.watch(voiceInputControllerProvider);
+    final activePocket = ref.watch(activePocketProvider);
+    final pockets = ref.watch(pocketsStreamProvider).valueOrNull ?? const [];
 
     ref.listen(voiceInputControllerProvider, _handleVoiceStateChange);
+
+    var balanceLabel = l10n.homeBalanceLabel;
+    if (activePocket != null) {
+      final match = pockets.where((p) => p.id == activePocket);
+      if (match.isNotEmpty) balanceLabel = pocketDisplayName(match.first, l10n);
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('KasBicara'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            tooltip: l10n.pocketManageTooltip,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PocketManageScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.language_rounded),
             tooltip: l10n.settingsLanguageTooltip,
@@ -41,36 +58,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            balanceAsync.when(
-              loading: () => const CircularProgressIndicator(),
-              error: (e, _) => Text('Gagal memuat saldo: $e'),
-              data: (balance) => Text(
-                formatRupiah(balance),
-                style: Theme.of(context).textTheme.displayLarge,
+      body: Column(
+        children: [
+          const SizedBox(height: 8),
+          const PocketSelector(),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  balanceAsync.when(
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, _) => Text('Gagal memuat saldo: $e'),
+                    data: (balance) => Text(
+                      formatRupiah(balance),
+                      style: Theme.of(context).textTheme.displayLarge,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    balanceLabel,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 48),
+                  _MicButton(state: voiceState, onTap: _onMicTap),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: _buildStatusLine(voiceState, l10n),
+                  ),
+                  TextButton(
+                    onPressed: () => _openManualForm(context),
+                    child: Text(l10n.homeAddManual),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.homeBalanceLabel,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 48),
-            _MicButton(state: voiceState, onTap: _onMicTap),
-            const SizedBox(height: 16),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: _buildStatusLine(voiceState, l10n),
-            ),
-            TextButton(
-              onPressed: () => _openManualForm(context),
-              child: Text(l10n.homeAddManual),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_colors.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
+import '../../../shared/widgets/pocket_selector.dart';
 import '../../export/application/export_controller.dart';
 import '../application/dashboard_models.dart';
 import '../application/dashboard_providers.dart';
@@ -24,6 +25,14 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final balanceAsync = ref.watch(balanceProvider);
+    final activePocket = ref.watch(activePocketProvider);
+    final pockets = ref.watch(pocketsStreamProvider).valueOrNull ?? const [];
+
+    var balanceLabel = l10n.dashboardBalanceTotal;
+    if (activePocket != null) {
+      final match = pockets.where((p) => p.id == activePocket);
+      if (match.isNotEmpty) balanceLabel = pocketDisplayName(match.first, l10n);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -37,47 +46,55 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Column(
         children: [
-          Center(
-            child: Column(
+          const SizedBox(height: 8),
+          const PocketSelector(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
               children: [
-                Text(
-                  l10n.dashboardBalanceTotal,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 4),
-                balanceAsync.when(
-                  loading: () => const CircularProgressIndicator(),
-                  error: (e, _) => Text('Gagal memuat: $e'),
-                  data: (balance) => Text(
-                    formatRupiah(balance),
-                    style: Theme.of(context).textTheme.displayMedium,
+                Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        balanceLabel,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      balanceAsync.when(
+                        loading: () => const CircularProgressIndicator(),
+                        error: (e, _) => Text('Gagal memuat: $e'),
+                        data: (balance) => Text(
+                          formatRupiah(balance),
+                          style: Theme.of(context).textTheme.displayMedium,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 24),
+                const _PeriodSelector(),
+                const SizedBox(height: 12),
+                const _PeriodSummaryRow(),
+                const SizedBox(height: 32),
+                Text(
+                  l10n.dashboardCategoryDistribution,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                const _CategoryDonutChart(),
+                const SizedBox(height: 32),
+                Text(
+                  l10n.dashboardTrend,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                const _TrendBarChart(),
+                const SizedBox(height: 24),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          const _PeriodSelector(),
-          const SizedBox(height: 12),
-          const _PeriodSummaryRow(),
-          const SizedBox(height: 32),
-          Text(
-            l10n.dashboardCategoryDistribution,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          const _CategoryDonutChart(),
-          const SizedBox(height: 32),
-          Text(
-            l10n.dashboardTrend,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          const _TrendBarChart(),
-          const SizedBox(height: 24),
         ],
       ),
     );
@@ -89,7 +106,16 @@ class DashboardScreen extends ConsumerWidget {
 
     final transactions = ref.read(periodTransactionsProvider).value ?? [];
     final period = ref.read(dashboardPeriodProvider);
-    final periodLabel = date_utils.monthLabel(period);
+    final activePocket = ref.read(activePocketProvider);
+    final pockets = ref.read(pocketsStreamProvider).valueOrNull ?? const [];
+    var periodLabel = date_utils.monthLabel(period);
+    if (activePocket != null) {
+      final match = pockets.where((p) => p.id == activePocket);
+      if (match.isNotEmpty) {
+        periodLabel =
+            '$periodLabel · ${pocketDisplayName(match.first, AppLocalizations.of(context)!)}';
+      }
+    }
 
     if (!context.mounted) return;
     await exportTransactions(

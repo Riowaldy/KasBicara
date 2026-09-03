@@ -41,6 +41,19 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   @override
+  Future<void> reassignPocket({
+    required String fromPocketId,
+    required String toPocketId,
+  }) async {
+    for (var i = 0; i < _items.length; i++) {
+      if (_items[i].pocketId == fromPocketId) {
+        _items[i] = _items[i].copyWith(pocketId: toPocketId);
+      }
+    }
+    _notify();
+  }
+
+  @override
   Future<Transaction?> getById(String id) async {
     for (final t in _items) {
       if (t.id == id) return t;

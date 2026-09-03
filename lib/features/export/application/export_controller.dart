@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/pocket_selector.dart';
 import 'excel_export_service.dart';
 import 'export_data.dart';
 import 'export_share_service.dart';
@@ -31,9 +32,14 @@ Future<void> exportTransactions({
   try {
     final categories = await ref.read(categoriesProvider.future);
     final categoriesById = {for (final c in categories) c.id: c};
+    final pockets = await ref.read(pocketsStreamProvider.future);
+    final pocketNamesById = {
+      for (final p in pockets) p.id: pocketDisplayName(p, l10n),
+    };
     final data = ExportData(
       transactions: transactions,
       categoriesById: categoriesById,
+      pocketNamesById: pocketNamesById,
       periodLabel: periodLabel,
     );
     final filenameBase = 'kasbicara-${_slugify(periodLabel)}';

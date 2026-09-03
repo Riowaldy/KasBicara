@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasbicara/core/utils/date_utils.dart';
 import 'package:kasbicara/data/datasources/default_categories.dart';
+import 'package:kasbicara/data/models/pocket_model.dart';
 import 'package:kasbicara/data/models/transaction_model.dart';
 import 'package:kasbicara/data/models/transaction_type.dart';
 import 'package:kasbicara/data/providers.dart';
@@ -33,6 +34,7 @@ void main() {
     required TransactionType type,
     required int amount,
     String category = 'expense-makanan-minuman',
+    String pocketId = kMainPocketId,
   }) {
     return Transaction(
       id: id,
@@ -42,6 +44,7 @@ void main() {
       date: date,
       createdAt: date,
       updatedAt: date,
+      pocketId: pocketId,
     );
   }
 
@@ -127,6 +130,38 @@ void main() {
       expect(slices.last.categoryId, 'expense-makanan-minuman');
     },
   );
+
+  test('periodSummaryProvider menyaring menurut activePocketProvider '
+      '(konsep §08 / FR-P4)', () async {
+    await txRepo.create(
+      build(
+        id: 't-main',
+        date: DateTime(2026, 8, 5),
+        type: TransactionType.keluar,
+        amount: 100000,
+      ),
+    );
+    await txRepo.create(
+      build(
+        id: 't-warung',
+        date: DateTime(2026, 8, 6),
+        type: TransactionType.keluar,
+        amount: 25000,
+        pocketId: 'kas-warung',
+      ),
+    );
+
+    await container.read(transactionsStreamProvider.future);
+    container.read(dashboardPeriodProvider.notifier).state = '2026-08';
+
+    // "Semua Pocket" (null) — gabung semua.
+    expect(container.read(periodSummaryProvider).value!.expense, 125000);
+
+    // Disaring ke satu pocket.
+    container.read(activePocketProvider.notifier).state = 'kas-warung';
+    expect(container.read(periodSummaryProvider).value!.expense, 25000);
+    expect(container.read(balanceProvider).value, -25000);
+  });
 
   test(
     'sixMonthTrendProvider mengisi 6 bulan berturut, termasuk bulan tanpa data',

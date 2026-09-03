@@ -26,28 +26,35 @@ final dashboardAvailableMonthsProvider = Provider<AsyncValue<List<String>>>((
   });
 });
 
-/// Transaksi mentah pada periode terpilih (tanpa filter kategori) — dipakai
-/// untuk ekspor Excel/PDF dari Dashboard (PRD §6.7).
+/// Transaksi mentah pada periode terpilih (tanpa filter kategori), sudah
+/// disaring [activePocketProvider] — dipakai untuk ekspor Excel/PDF dari
+/// Dashboard (PRD §6.7, konsep "Pocket KasBicara" §08).
 final periodTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
   ref,
 ) {
   final txAsync = ref.watch(transactionsStreamProvider);
   final period = ref.watch(dashboardPeriodProvider);
+  final activePocket = ref.watch(activePocketProvider);
   return txAsync.whenData(
-    (list) => list.where((t) => toMonthKey(t.date) == period).toList(),
+    (list) => list
+        .where((t) => toMonthKey(t.date) == period)
+        .where((t) => activePocket == null || t.pocketId == activePocket)
+        .toList(),
   );
 });
 
-/// Ringkasan pemasukan/pengeluaran/selisih periode terpilih.
+/// Ringkasan pemasukan/pengeluaran/selisih periode terpilih (pocket aktif).
 final periodSummaryProvider = Provider<AsyncValue<PeriodSummary>>((ref) {
   final txAsync = ref.watch(transactionsStreamProvider);
   final period = ref.watch(dashboardPeriodProvider);
+  final activePocket = ref.watch(activePocketProvider);
 
   return txAsync.whenData((list) {
     var income = 0;
     var expense = 0;
     for (final t in list) {
       if (toMonthKey(t.date) != period) continue;
+      if (activePocket != null && t.pocketId != activePocket) continue;
       if (t.type == TransactionType.masuk) {
         income += t.amount;
       } else {
@@ -67,6 +74,7 @@ final categoryBreakdownProvider = Provider<AsyncValue<List<CategorySlice>>>((
   final txAsync = ref.watch(transactionsStreamProvider);
   final categoriesAsync = ref.watch(categoriesProvider);
   final period = ref.watch(dashboardPeriodProvider);
+  final activePocket = ref.watch(activePocketProvider);
 
   if (txAsync is AsyncLoading || categoriesAsync is AsyncLoading) {
     return const AsyncValue.loading();
@@ -88,6 +96,7 @@ final categoryBreakdownProvider = Provider<AsyncValue<List<CategorySlice>>>((
   for (final t in transactions) {
     if (t.type != TransactionType.keluar) continue;
     if (toMonthKey(t.date) != period) continue;
+    if (activePocket != null && t.pocketId != activePocket) continue;
     totals[t.category] = (totals[t.category] ?? 0) + t.amount;
   }
 
@@ -110,6 +119,7 @@ final categoryBreakdownProvider = Provider<AsyncValue<List<CategorySlice>>>((
 /// berjalan), untuk grafik batang. Bulan tanpa transaksi tetap tampil (0).
 final sixMonthTrendProvider = Provider<AsyncValue<List<MonthlyTotals>>>((ref) {
   final txAsync = ref.watch(transactionsStreamProvider);
+  final activePocket = ref.watch(activePocketProvider);
 
   return txAsync.whenData((list) {
     final now = DateTime.now();
@@ -122,6 +132,7 @@ final sixMonthTrendProvider = Provider<AsyncValue<List<MonthlyTotals>>>((ref) {
     final expenseByMonth = {for (final m in months) m: 0};
 
     for (final t in list) {
+      if (activePocket != null && t.pocketId != activePocket) continue;
       final key = toMonthKey(t.date);
       if (!incomeByMonth.containsKey(key)) continue;
       if (t.type == TransactionType.masuk) {

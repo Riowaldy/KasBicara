@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasbicara/data/models/pocket_model.dart';
 import 'package:kasbicara/data/models/transaction_model.dart';
 import 'package:kasbicara/data/models/transaction_type.dart';
 
@@ -40,6 +41,17 @@ void main() {
       final original = buildTransaction(note: null);
       final restored = Transaction.fromMap(original.toMap());
       expect(restored.note, isNull);
+    });
+
+    test('baris pra-migrasi tanpa pocket_id di-backfill ke Pocket Utama '
+        '(konsep §04 / FR-P7)', () {
+      final map = buildTransaction().toMap()..remove('pocket_id');
+      expect(Transaction.fromMap(map).pocketId, kMainPocketId);
+    });
+
+    test('pocket_id bertahan lewat round-trip', () {
+      final original = buildTransaction().copyWith(pocketId: 'kas-warung');
+      expect(Transaction.fromMap(original.toMap()).pocketId, 'kas-warung');
     });
   });
 

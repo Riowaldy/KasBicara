@@ -6,11 +6,14 @@ import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../core/utils/id_generator.dart';
 import '../../../core/voice/voice_parser.dart';
+import '../../../data/models/pocket_model.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/category_icons.dart';
+import '../../../shared/widgets/pocket_icons.dart';
+import '../../../shared/widgets/pocket_selector.dart';
 import '../../../shared/widgets/rupiah_input_formatter.dart';
 
 /// Kartu konfirmasi/edit transaksi (PRD §6.2 & §6.3).
@@ -41,6 +44,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   late TransactionType _type;
   late DateTime _date;
   String? _categoryId;
+  late String _pocketId;
   bool _saving = false;
 
   /// True jika amount berasal dari draft suara yang TIDAK yakin — field
@@ -58,6 +62,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _type = initial?.type ?? draft?.type ?? TransactionType.keluar;
     _date = date_utils.dateOnly(initial?.date ?? DateTime.now());
     _categoryId = initial?.category ?? draft?.category;
+    // Nilai awal pocket (konsep "Pocket KasBicara" §06): transaksi lama pakai
+    // pocket‑nya; selain itu ikut pocket aktif, atau Pocket Utama saat
+    // konteks "Semua Pocket". Deteksi pocket dari suara = Fase 2.
+    _pocketId =
+        initial?.pocketId ?? ref.read(activePocketProvider) ?? kMainPocketId;
     _noteController = TextEditingController(
       text: initial?.note ?? draft?.note ?? '',
     );
@@ -107,6 +116,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               _buildDateField(),
               const SizedBox(height: 16),
               _buildCategoryField(),
+              const SizedBox(height: 16),
+              _buildPocketField(),
               const SizedBox(height: 16),
               _buildNoteField(),
               const SizedBox(height: 32),
@@ -285,6 +296,49 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
+  Widget _buildPocketField() {
+    final l10n = AppLocalizations.of(context)!;
+    final pocketsAsync = ref.watch(pocketsStreamProvider);
+
+    return pocketsAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (error, _) => Text('Gagal memuat pocket: $error'),
+      data: (pockets) {
+        final validIds = pockets.map((p) => p.id).toSet();
+        final value = validIds.contains(_pocketId)
+            ? _pocketId
+            : (validIds.contains(kMainPocketId)
+                  ? kMainPocketId
+                  : (pockets.isNotEmpty ? pockets.first.id : null));
+
+        return DropdownButtonFormField<String>(
+          key: const Key('pocket-dropdown'),
+          initialValue: value,
+          decoration: InputDecoration(labelText: l10n.formPocketLabel),
+          items: pockets
+              .map(
+                (p) => DropdownMenuItem(
+                  value: p.id,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(iconForPocketKey(p.icon), size: 18),
+                      const SizedBox(width: 8),
+                      Text(pocketDisplayName(p, l10n)),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => setState(() {
+            if (v != null) _pocketId = v;
+          }),
+          validator: (v) => v == null ? l10n.formPocketError : null,
+        );
+      },
+    );
+  }
+
   Widget _buildNoteField() {
     return TextFormField(
       key: const Key('note-field'),
@@ -338,6 +392,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           type: _type,
           amount: amount,
           category: _categoryId,
+          pocketId: _pocketId,
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
@@ -351,6 +406,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           type: _type,
           amount: amount,
           category: _categoryId!,
+          pocketId: _pocketId,
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),

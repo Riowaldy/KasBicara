@@ -55,9 +55,36 @@
   "formDateLabel": "Date",
   "formCategoryLabel": "Category",
   "formCategoryError": "Choose a category",
+  "formPocketLabel": "Pocket",
+  "formPocketError": "Choose a pocket",
   "formNoteLabel": "Note (optional)",
   "actionSave": "Save",
+  "actionAdd": "Add",
   "formVoiceReferenceTitle": "Voice recognition result",
+
+  "pocketMainName": "Main Pocket",
+  "pocketSelectorAll": "All Pockets",
+  "pocketManageTitle": "Manage Pockets",
+  "pocketManageTooltip": "Manage pockets",
+  "pocketManageHint": "Press and drag to reorder. The Main Pocket stays on top and cannot be deleted.",
+  "pocketAddTitle": "Add Pocket",
+  "pocketEditTitle": "Edit Pocket",
+  "pocketNameLabel": "Pocket name",
+  "pocketNameError": "Pocket name is required",
+  "pocketIconLabel": "Icon",
+  "pocketEmpty": "No extra pockets yet. Tap \"Add Pocket\" to create one.",
+  "pocketDeleteConfirmTitle": "Delete pocket?",
+  "pocketDeleteConfirmEmpty": "Pocket \"{name}\" will be deleted.",
+  "@pocketDeleteConfirmEmpty": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transactions in pocket \"{name}\" will be moved to the Main Pocket, then the pocket is deleted.}}",
+  "@pocketDeleteConfirmReassign": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
 
   "settingsLanguage": "Language",
   "settingsLanguageAuto": "Automatic",

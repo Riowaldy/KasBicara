@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/utils/date_utils.dart' as date_utils;
+import 'pocket_model.dart';
 import 'transaction_type.dart';
 
 /// Entitas transaksi sesuai skema PRD §9.
@@ -18,6 +19,7 @@ class Transaction {
     required this.date,
     required this.createdAt,
     required this.updatedAt,
+    this.pocketId = kMainPocketId,
   });
 
   final String id;
@@ -30,6 +32,11 @@ class Transaction {
   final DateTime date;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Pocket tempat transaksi ini dicatat (konsep "Pocket KasBicara" §02).
+  /// Wajib & tunggal — default [kMainPocketId] agar transaksi tanpa pilihan
+  /// eksplisit (mis. data pra‑migrasi, tes lama) tetap konsisten.
+  final String pocketId;
 
   /// Validasi minimal sebelum disimpan (mitigasi risiko PRD §13: jumlah
   /// tidak boleh 0/negatif). Lempar [ArgumentError] jika tidak valid.
@@ -51,6 +58,7 @@ class Transaction {
     DateTime? date,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? pocketId,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -61,6 +69,7 @@ class Transaction {
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      pocketId: pocketId ?? this.pocketId,
     );
   }
 
@@ -74,6 +83,7 @@ class Transaction {
       'date': date_utils.toDateString(date),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'pocket_id': pocketId,
     };
   }
 
@@ -87,6 +97,7 @@ class Transaction {
       date: DateTime.parse(map['date'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      pocketId: (map['pocket_id'] as String?) ?? kMainPocketId,
     );
   }
 
@@ -102,16 +113,27 @@ class Transaction {
           note == other.note &&
           date == other.date &&
           createdAt == other.createdAt &&
-          updatedAt == other.updatedAt;
+          updatedAt == other.updatedAt &&
+          pocketId == other.pocketId;
 
   @override
-  int get hashCode =>
-      Object.hash(id, type, amount, category, note, date, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    type,
+    amount,
+    category,
+    note,
+    date,
+    createdAt,
+    updatedAt,
+    pocketId,
+  );
 
   @override
   String toString() =>
       'Transaction(id: $id, type: $type, amount: $amount, '
-      'category: $category, date: ${date_utils.toDateString(date)})';
+      'category: $category, pocket: $pocketId, '
+      'date: ${date_utils.toDateString(date)})';
 }
 
 const _sentinel = Object();

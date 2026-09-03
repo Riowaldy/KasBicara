@@ -58,9 +58,36 @@
   "formDateLabel": "Tanggal",
   "formCategoryLabel": "Kategori",
   "formCategoryError": "Pilih kategori",
+  "formPocketLabel": "Pocket",
+  "formPocketError": "Pilih pocket",
   "formNoteLabel": "Keterangan (opsional)",
   "actionSave": "Simpan",
+  "actionAdd": "Tambah",
   "formVoiceReferenceTitle": "Hasil pengenalan suara",
+
+  "pocketMainName": "Pocket Utama",
+  "pocketSelectorAll": "Semua Pocket",
+  "pocketManageTitle": "Kelola Pocket",
+  "pocketManageTooltip": "Kelola pocket",
+  "pocketManageHint": "Tahan lalu geser untuk mengubah urutan. Pocket Utama selalu di atas dan tidak dapat dihapus.",
+  "pocketAddTitle": "Tambah Pocket",
+  "pocketEditTitle": "Ubah Pocket",
+  "pocketNameLabel": "Nama pocket",
+  "pocketNameError": "Nama pocket wajib diisi",
+  "pocketIconLabel": "Ikon",
+  "pocketEmpty": "Belum ada pocket tambahan. Ketuk \"Tambah Pocket\" untuk membuat.",
+  "pocketDeleteConfirmTitle": "Hapus pocket?",
+  "pocketDeleteConfirmEmpty": "Pocket \"{name}\" akan dihapus.",
+  "@pocketDeleteConfirmEmpty": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transaksi di pocket \"{name}\" akan dipindahkan ke Pocket Utama, lalu pocket dihapus.}}",
+  "@pocketDeleteConfirmReassign": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
 
   "settingsLanguage": "Bahasa",
   "settingsLanguageAuto": "Otomatis",

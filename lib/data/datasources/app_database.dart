@@ -5,12 +5,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+import '../models/pocket_model.dart';
 import 'default_categories.dart';
+import 'default_pockets.dart';
 
 /// Nama file database & kunci penyimpanan passphrase di secure storage.
 const _dbFileName = 'kasbicara.db';
 const _passphraseKey = 'kasbicara_db_passphrase';
-const _dbVersion = 1;
+
+/// v2 (konsep "Pocket KasBicara" §04): tabel `pockets` + kolom
+/// `transactions.pocket_id`. Transaksi lama di‑backfill ke Pocket Utama.
+const _dbVersion = 2;
 
 /// Membuka & mengelola koneksi database SQLite terenkripsi (SQLCipher).
 ///
@@ -68,7 +73,8 @@ class AppDatabase {
             note TEXT,
             date TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            pocket_id TEXT NOT NULL DEFAULT '$kMainPocketId'
           )
         ''');
 
@@ -78,6 +84,11 @@ class AppDatabase {
         await db.execute(
           'CREATE INDEX idx_transactions_category ON transactions(category)',
         );
+        await db.execute(
+          'CREATE INDEX idx_transactions_pocket ON transactions(pocket_id)',
+        );
+
+        await _createPocketsTable(db);
 
         final batch = db.batch();
         for (final category in defaultCategories) {
@@ -87,8 +98,67 @@ class AppDatabase {
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
         }
+        for (final pocket in defaultPockets) {
+          batch.insert(
+            'pockets',
+            pocket.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
+        }
         await batch.commit(noResult: true);
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _migrateToV2(db);
+      },
+    );
+  }
+
+  /// Skema tabel `pockets` — dipakai `onCreate` (instalasi baru) &
+  /// `_migrateToV2` (upgrade). Idempotent lewat `IF NOT EXISTS`.
+  Future<void> _createPocketsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pockets (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        is_default INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  /// Migrasi v1 → v2 (konsep "Pocket KasBicara" §04). Semua langkah
+  /// idempotent; sqflite membungkus `onUpgrade` dalam satu transaksi.
+  Future<void> _migrateToV2(Database db) async {
+    await _createPocketsTable(db);
+
+    for (final pocket in defaultPockets) {
+      await db.insert(
+        'pockets',
+        pocket.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+
+    // Tambah kolom hanya bila belum ada (aman kalau migrasi terulang).
+    final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+    final hasPocketId = columns.any((c) => c['name'] == 'pocket_id');
+    if (!hasPocketId) {
+      await db.execute(
+        "ALTER TABLE transactions ADD COLUMN pocket_id TEXT NOT NULL "
+        "DEFAULT '$kMainPocketId'",
+      );
+    }
+
+    // DEFAULT sudah mengisi baris lama; UPDATE eksplisit sebagai jaring
+    // pengaman untuk baris yang mungkin lolos (mis. NULL dari migrasi lama).
+    await db.update('transactions', {
+      'pocket_id': kMainPocketId,
+    }, where: "pocket_id IS NULL OR pocket_id = ''");
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_pocket '
+      'ON transactions(pocket_id)',
     );
   }
 
