@@ -34,7 +34,7 @@ void main() {
   }
 
   testWidgets('Dashboard: saldo bersih, transaksi terakhir kosong, '
-      'menu tambah 3 cara', (tester) async {
+      'menu tambah (suara + manual)', (tester) async {
     await pumpApp(tester);
 
     // Dashboard adalah tab pertama & default.
@@ -49,19 +49,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('add-entry-pager')), findsOneWidget);
     expect(find.byKey(const Key('add-voice')), findsOneWidget);
-    // Ketiga tab bernama langsung terlihat.
+    // Tab bernama langsung terlihat. "Pindai struk" sementara disembunyikan
+    // (OCR gratis belum akurat) — lihat `_scanEnabled` di dashboard_screen.
     expect(find.byKey(const Key('add-tab-voice')), findsOneWidget);
     expect(find.byKey(const Key('add-tab-manual')), findsOneWidget);
-    expect(find.byKey(const Key('add-tab-scan')), findsOneWidget);
+    expect(find.byKey(const Key('add-tab-scan')), findsNothing);
+    expect(find.byKey(const Key('add-scan')), findsNothing);
 
     // Ketuk tab membuka halaman terkait.
     await tester.tap(find.byKey(const Key('add-tab-manual')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('add-manual')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('add-tab-scan')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('add-scan')), findsOneWidget);
   });
 
   testWidgets('Dashboard: pilih "Isi manual" membuka form transaksi', (

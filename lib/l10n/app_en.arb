@@ -90,6 +90,7 @@
   "actionAdd": "Add",
   "formVoiceReferenceTitle": "Voice recognition result",
   "formReceiptReferenceTitle": "Receipt scan result",
+  "formReceiptRawTextToggle": "Show raw scanned text",
   "formAmountHelperReceipt": "Not read from the receipt, enter manually",
 
   "assetMainName": "Main Account",

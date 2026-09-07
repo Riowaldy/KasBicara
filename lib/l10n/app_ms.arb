@@ -90,6 +90,7 @@
   "actionAdd": "Tambah",
   "formVoiceReferenceTitle": "Hasil pengecaman suara",
   "formReceiptReferenceTitle": "Hasil imbasan resit",
+  "formReceiptRawTextToggle": "Lihat teks mentah imbasan",
   "formAmountHelperReceipt": "Tidak terbaca daripada resit, isi manual",
 
   "assetMainName": "Aset Utama",

@@ -93,6 +93,7 @@
   "actionAdd": "Tambah",
   "formVoiceReferenceTitle": "Hasil pengenalan suara",
   "formReceiptReferenceTitle": "Hasil pindai struk",
+  "formReceiptRawTextToggle": "Lihat teks mentah hasil pindai",
   "formAmountHelperReceipt": "Tidak terbaca dari struk, isi manual",
 
   "assetMainName": "Aset Utama",

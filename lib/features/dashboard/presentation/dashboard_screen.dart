@@ -18,8 +18,8 @@ import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/dashboard_providers.dart';
 
 /// Dashboard ringkas (PRD §6.5): saldo bersih aset aktif, transaksi terakhir,
-/// dan satu tombol tambah data dengan tiga cara — suara, manual, atau pindai
-/// struk.
+/// dan satu tombol tambah data — lewat suara atau isi manual. (Pindai struk
+/// sementara disembunyikan, lihat `_scanEnabled`.)
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -91,9 +91,17 @@ class DashboardScreen extends ConsumerWidget {
 
 enum _AddAction { voice, manual, scan }
 
-/// Lembar "Tambah Data" (PRD §6.5). Ketiga cara — Lewat suara, Isi manual,
-/// Pindai struk — tampil bersama: baris tab bernama di atas + carousel yang
-/// bisa digeser. Halaman pertama (default) tetap "Lewat suara".
+/// Sementara disembunyikan: pembacaan struk (OCR gratis on-device) masih
+/// belum cukup akurat. Rencananya dihidupkan lagi setelah beralih ke OCR
+/// berbayar. Semua kode alur (`startReceiptScan`, parser, layout) sengaja
+/// dipertahankan — cukup setel `true` untuk memunculkannya kembali di lembar
+/// "Tambah Data".
+const bool _scanEnabled = false;
+
+/// Lembar "Tambah Data" (PRD §6.5). Cara yang aktif — Lewat suara & Isi
+/// manual (Pindai struk disembunyikan via `_scanEnabled`) — tampil bersama:
+/// baris tab bernama di atas + carousel yang bisa digeser. Halaman pertama
+/// (default) tetap "Lewat suara".
 class _AddEntrySheet extends StatefulWidget {
   const _AddEntrySheet();
 
@@ -135,11 +143,13 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
         icon: Icons.edit_rounded,
         label: l10n.addSheetManual,
       ),
-      (
-        key: const Key('add-tab-scan'),
-        icon: Icons.receipt_long_rounded,
-        label: l10n.addSheetScan,
-      ),
+      // ignore: dead_code
+      if (_scanEnabled)
+        (
+          key: const Key('add-tab-scan'),
+          icon: Icons.receipt_long_rounded,
+          label: l10n.addSheetScan,
+        ),
     ];
 
     final slides = [
@@ -151,13 +161,15 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
         subtitle: l10n.addSheetManualSubtitle,
         onTap: () => Navigator.of(context).pop(_AddAction.manual),
       ),
-      _AddSlideCard(
-        itemKey: const Key('add-scan'),
-        icon: Icons.receipt_long_rounded,
-        title: l10n.addSheetScan,
-        subtitle: l10n.addSheetScanSubtitle,
-        onTap: () => Navigator.of(context).pop(_AddAction.scan),
-      ),
+      // ignore: dead_code
+      if (_scanEnabled)
+        _AddSlideCard(
+          itemKey: const Key('add-scan'),
+          icon: Icons.receipt_long_rounded,
+          title: l10n.addSheetScan,
+          subtitle: l10n.addSheetScanSubtitle,
+          onTap: () => Navigator.of(context).pop(_AddAction.scan),
+        ),
     ];
 
     return SafeArea(

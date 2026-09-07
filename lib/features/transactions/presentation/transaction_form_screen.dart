@@ -33,6 +33,7 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
     this.voiceDraft,
     this.draftDate,
     this.draftSource = DraftSource.voice,
+    this.rawScanText,
   }) : assert(
          initial == null || voiceDraft == null,
          'initial (edit) dan voiceDraft (draft) tidak boleh bersamaan',
@@ -42,6 +43,10 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
   final VoiceParseResult? voiceDraft;
   final DateTime? draftDate;
   final DraftSource draftSource;
+
+  /// Teks mentah hasil OCR struk — ditampilkan (bisa dilipat) di kartu
+  /// referensi agar pengguna bisa memeriksa apa yang benar-benar terbaca.
+  final String? rawScanText;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -185,11 +190,51 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     '"${draft.rawTranscript}"',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                  if (isReceipt &&
+                      (widget.rawScanText?.trim().isNotEmpty ?? false))
+                    _buildRawScanText(widget.rawScanText!.trim()),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Teks mentah OCR, dilipat secara default. Membantu pengguna (dan kami)
+  /// melihat apa yang benar-benar terbaca dari struk saat hasilnya meleset.
+  Widget _buildRawScanText(String text) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        key: const Key('raw-scan-text'),
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        title: Text(
+          AppLocalizations.of(context)!.formReceiptRawTextToggle,
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+        children: [
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxHeight: 220),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                text,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

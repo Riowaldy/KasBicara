@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/voice/voice_parser.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
+import '../application/receipt_layout.dart';
 import '../application/receipt_parser.dart';
 
 /// Alur "Pindai Struk": pilih sumber gambar → OCR di perangkat (ML Kit,
@@ -40,7 +41,13 @@ Future<void> startReceiptScan(BuildContext context) async {
       final recognized = await recognizer.processImage(
         InputImage.fromFilePath(file.path),
       );
-      scan = parseReceiptText(recognized.text);
+      // Susun ulang teks menurut tata letak (koordinat kotak ML Kit) supaya
+      // kolom label & nominal kembali sebaris; jatuh ke teks polos bila
+      // geometri tak tersedia.
+      final assembled = assembleReceiptText(_fragmentsOf(recognized));
+      scan = parseReceiptText(
+        assembled.trim().isEmpty ? recognized.text : assembled,
+      );
     } finally {
       await recognizer.close();
     }
@@ -75,6 +82,7 @@ Future<void> startReceiptScan(BuildContext context) async {
         voiceDraft: draft,
         draftDate: scan!.date,
         draftSource: DraftSource.receipt,
+        rawScanText: scan.rawText,
       ),
     ),
   );
@@ -126,4 +134,21 @@ void _showProgress(BuildContext context, String message) {
 
 void _snack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+/// Ubah baris-baris ML Kit (beserta kotak batasnya) menjadi [TextFragment]
+/// untuk [assembleReceiptText]. Baris tanpa geometri diabaikan agar tak
+/// mengacaukan penyusunan ulang.
+Iterable<TextFragment> _fragmentsOf(RecognizedText recognized) sync* {
+  for (final block in recognized.blocks) {
+    for (final line in block.lines) {
+      final box = line.boundingBox;
+      yield TextFragment(
+        text: line.text,
+        top: box.top,
+        bottom: box.bottom,
+        left: box.left,
+      );
+    }
+  }
 }
