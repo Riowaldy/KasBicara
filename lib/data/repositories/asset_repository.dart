@@ -16,6 +16,10 @@ abstract class AssetRepository {
   Future<void> delete(String id);
   Future<List<Asset>> getAll();
 
+  /// Tandai satu aset sebagai "Sumber Aset Utama" (`is_primary`). Mencabut
+  /// flag dari semua aset lain — tepat satu primary setiap saat.
+  Future<void> setPrimary(String id);
+
   /// Stream reaktif — memancarkan ulang daftar aset setiap ada
   /// create/update/delete, agar filter & dropdown form auto‑update.
   Stream<List<Asset>> watchAll();
@@ -57,7 +61,37 @@ class SqfliteAssetRepository implements AssetRepository {
     if (id == kMainAssetId) {
       throw ArgumentError.value(id, 'id', 'Aset Utama tidak dapat dihapus');
     }
+    // Sumber Aset Utama juga terkunci — pengguna harus menandai aset lain
+    // sebagai Utama lebih dulu (UI menyembunyikan tombol hapusnya).
+    final rows = await _db.query(
+      _table,
+      columns: ['is_primary'],
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isNotEmpty && (rows.first['is_primary'] as int?) == 1) {
+      throw ArgumentError.value(
+        id,
+        'id',
+        'Sumber Aset Utama tidak dapat dihapus',
+      );
+    }
     await _db.delete(_table, where: 'id = ?', whereArgs: [id]);
+    _notify();
+  }
+
+  @override
+  Future<void> setPrimary(String id) async {
+    await _db.transaction((txn) async {
+      await txn.update(_table, {'is_primary': 0});
+      await txn.update(
+        _table,
+        {'is_primary': 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
     _notify();
   }
 

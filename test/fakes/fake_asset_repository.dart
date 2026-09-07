@@ -34,7 +34,22 @@ class FakeAssetRepository implements AssetRepository {
     if (id == kMainAssetId) {
       throw ArgumentError.value(id, 'id', 'Aset Utama tidak dapat dihapus');
     }
+    if (_items.any((a) => a.id == id && a.isPrimary)) {
+      throw ArgumentError.value(
+        id,
+        'id',
+        'Sumber Aset Utama tidak dapat dihapus',
+      );
+    }
     _items.removeWhere((a) => a.id == id);
+    _notify();
+  }
+
+  @override
+  Future<void> setPrimary(String id) async {
+    for (var i = 0; i < _items.length; i++) {
+      _items[i] = _items[i].copyWith(isPrimary: _items[i].id == id);
+    }
     _notify();
   }
 

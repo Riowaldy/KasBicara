@@ -6,7 +6,6 @@ import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../core/utils/id_generator.dart';
 import '../../../core/voice/voice_parser.dart';
-import '../../../data/models/asset_model.dart';
 import '../../../data/models/pocket_model.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
@@ -86,8 +85,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     // konteks "Semua Pocket". Deteksi pocket dari suara = Fase 2.
     _pocketId =
         initial?.pocketId ?? ref.read(activePocketProvider) ?? kMainPocketId;
-    // Aset tidak punya "konteks aktif" seperti pocket — default Aset Utama.
-    _assetId = initial?.assetId ?? kMainAssetId;
+    // Aset tidak punya "konteks aktif" seperti pocket — default ke "Sumber
+    // Aset Utama" yang dipilih pengguna (fallback Aset Utama bawaan).
+    _assetId = initial?.assetId ?? ref.read(primaryAssetIdProvider);
     _noteController = TextEditingController(
       text: initial?.note ?? draft?.note ?? '',
     );
@@ -393,10 +393,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       error: (error, _) => Text('Gagal memuat aset: $error'),
       data: (assets) {
         final validIds = assets.map((a) => a.id).toSet();
+        final primaryId = ref.read(primaryAssetIdProvider);
         final value = validIds.contains(_assetId)
             ? _assetId
-            : (validIds.contains(kMainAssetId)
-                  ? kMainAssetId
+            : (validIds.contains(primaryId)
+                  ? primaryId
                   : (assets.isNotEmpty ? assets.first.id : null));
 
         return DropdownButtonFormField<String>(

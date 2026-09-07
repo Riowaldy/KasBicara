@@ -5,14 +5,15 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/id_generator.dart';
 import '../../../data/models/asset_model.dart';
+import '../../../data/models/asset_type.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/asset_icons.dart';
 import '../../../shared/widgets/asset_selector.dart';
 
-/// Layar "Kelola Aset": daftar aset + saldo, tambah/ubah/hapus, dan susun
-/// ulang. Aset Utama terkunci di posisi teratas dan tidak dapat dihapus.
-/// Strukturnya meniru `PocketManageScreen`.
+/// Layar "Kelola Aset": daftar aset + saldo, tambah/ubah/hapus, susun ulang,
+/// dan menandai "Sumber Aset Utama". Aset Utama bawaan terkunci di posisi
+/// teratas dan tidak dapat dihapus. Strukturnya meniru `PocketManageScreen`.
 class AssetManageScreen extends ConsumerWidget {
   const AssetManageScreen({super.key});
 
@@ -24,6 +25,9 @@ class AssetManageScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.assetManageTitle)),
       floatingActionButton: FloatingActionButton.extended(
+        // Tag unik — layar ini kini ikut selalu ter-mount di IndexedStack
+        // bottom-nav bersama FAB Dashboard (tag default akan bentrok).
+        heroTag: 'asset-manage-fab',
         onPressed: () => _addAsset(context, ref),
         icon: const Icon(Icons.add_rounded),
         label: Text(l10n.assetAddTitle),
@@ -38,7 +42,9 @@ class AssetManageScreen extends ConsumerWidget {
               id: kMainAssetId,
               name: 'Aset Utama',
               icon: 'cash',
+              type: AssetType.tunai,
               isDefault: true,
+              isPrimary: true,
               sortOrder: 0,
             ),
           );
@@ -57,6 +63,9 @@ class AssetManageScreen extends ConsumerWidget {
               _AssetRow(
                 asset: main,
                 onEdit: () => _editAsset(context, ref, main),
+                onSetPrimary: main.isPrimary
+                    ? null
+                    : () => _setPrimary(ref, main),
               ),
               const Divider(height: 1),
               if (others.isEmpty)
@@ -83,7 +92,14 @@ class AssetManageScreen extends ConsumerWidget {
                       asset: asset,
                       dragIndex: index,
                       onEdit: () => _editAsset(context, ref, asset),
-                      onDelete: () => _deleteAsset(context, ref, asset),
+                      onSetPrimary: asset.isPrimary
+                          ? null
+                          : () => _setPrimary(ref, asset),
+                      // Sumber Aset Utama tidak dapat dihapus — tandai aset
+                      // lain sebagai Utama lebih dulu.
+                      onDelete: asset.isPrimary
+                          ? null
+                          : () => _deleteAsset(context, ref, asset),
                     );
                   },
                 ),
@@ -105,7 +121,9 @@ class AssetManageScreen extends ConsumerWidget {
         id: generateId(),
         name: result.name,
         icon: result.icon,
+        type: result.type,
         isDefault: false,
+        isPrimary: false,
         sortOrder: maxSort + 1,
       ),
     );
@@ -124,8 +142,14 @@ class AssetManageScreen extends ConsumerWidget {
         // Nama Aset Utama tidak dapat diubah (dirender dari l10n).
         name: asset.isDefault ? null : result.name,
         icon: result.icon,
+        type: result.type,
       ),
     );
+  }
+
+  Future<void> _setPrimary(WidgetRef ref, Asset asset) async {
+    final repo = await ref.read(assetRepositoryProvider.future);
+    await repo.setPrimary(asset.id);
   }
 
   Future<void> _deleteAsset(
@@ -165,7 +189,7 @@ class AssetManageScreen extends ConsumerWidget {
       final txRepo = await ref.read(transactionRepositoryProvider.future);
       await txRepo.reassignAsset(
         fromAssetId: asset.id,
-        toAssetId: kMainAssetId,
+        toAssetId: ref.read(primaryAssetIdProvider),
       );
     }
     final repo = await ref.read(assetRepositoryProvider.future);
@@ -193,11 +217,12 @@ class AssetManageScreen extends ConsumerWidget {
   }
 }
 
-/// Hasil form aset (nama + kunci ikon).
+/// Hasil form aset (nama + kunci ikon + tipe).
 class _AssetFormResult {
-  const _AssetFormResult(this.name, this.icon);
+  const _AssetFormResult(this.name, this.icon, this.type);
   final String name;
   final String icon;
+  final AssetType type;
 }
 
 Future<_AssetFormResult?> _showAssetForm(
@@ -207,7 +232,10 @@ Future<_AssetFormResult?> _showAssetForm(
   final l10n = AppLocalizations.of(context)!;
   final controller = TextEditingController(text: initial?.name ?? '');
   final formKey = GlobalKey<FormState>();
-  var selectedIcon = initial?.icon ?? assetIconKeys.first;
+  var selectedType = initial?.type ?? AssetType.tunai;
+  var selectedIcon = initial?.icon ?? selectedType.defaultIconKey;
+  // Sekali pengguna memilih ikon sendiri, berhenti menyarankan ikon dari tipe.
+  var iconTouched = initial != null;
   final isMain = initial?.isDefault ?? false;
 
   return showDialog<_AssetFormResult>(
@@ -233,6 +261,26 @@ Future<_AssetFormResult?> _showAssetForm(
                         : null,
                   ),
                 const SizedBox(height: 16),
+                DropdownButtonFormField<AssetType>(
+                  key: const Key('asset-type-dropdown'),
+                  initialValue: selectedType,
+                  decoration: InputDecoration(labelText: l10n.assetTypeLabel),
+                  items: [
+                    for (final t in AssetType.values)
+                      DropdownMenuItem(
+                        value: t,
+                        child: Text(assetTypeLabel(t, l10n)),
+                      ),
+                  ],
+                  onChanged: (t) {
+                    if (t == null) return;
+                    setState(() {
+                      selectedType = t;
+                      if (!iconTouched) selectedIcon = t.defaultIconKey;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
                 Text(
                   l10n.assetIconLabel,
                   style: Theme.of(context).textTheme.labelLarge,
@@ -244,7 +292,10 @@ Future<_AssetFormResult?> _showAssetForm(
                   children: [
                     for (final key in assetIconKeys)
                       InkWell(
-                        onTap: () => setState(() => selectedIcon = key),
+                        onTap: () => setState(() {
+                          selectedIcon = key;
+                          iconTouched = true;
+                        }),
                         borderRadius: BorderRadius.circular(24),
                         child: CircleAvatar(
                           backgroundColor: selectedIcon == key
@@ -277,6 +328,7 @@ Future<_AssetFormResult?> _showAssetForm(
                 _AssetFormResult(
                   isMain ? (initial?.name ?? '') : controller.text.trim(),
                   selectedIcon,
+                  selectedType,
                 ),
               );
             },
@@ -292,6 +344,7 @@ class _AssetRow extends ConsumerWidget {
   const _AssetRow({
     required this.asset,
     required this.onEdit,
+    this.onSetPrimary,
     this.onDelete,
     this.dragIndex,
     super.key,
@@ -299,6 +352,7 @@ class _AssetRow extends ConsumerWidget {
 
   final Asset asset;
   final VoidCallback onEdit;
+  final VoidCallback? onSetPrimary;
   final VoidCallback? onDelete;
   final int? dragIndex;
 
@@ -306,19 +360,37 @@ class _AssetRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final balanceAsync = ref.watch(assetBalanceProvider(asset.id));
+    final balanceText = balanceAsync.maybeWhen(
+      data: formatRupiah,
+      orElse: () => '…',
+    );
 
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.inkSurfaceAlt,
         child: Icon(iconForAssetKey(asset.icon), color: AppColors.gold),
       ),
-      title: Text(assetDisplayName(asset, l10n)),
-      subtitle: Text(
-        balanceAsync.maybeWhen(data: formatRupiah, orElse: () => '…'),
+      title: Row(
+        children: [
+          Flexible(child: Text(assetDisplayName(asset, l10n))),
+          if (asset.isPrimary) ...[
+            const SizedBox(width: 8),
+            _PrimaryBadge(label: l10n.assetPrimaryBadge),
+          ],
+        ],
       ),
+      subtitle: Text('$balanceText · ${assetTypeLabel(asset.type, l10n)}'),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: Icon(
+              asset.isPrimary ? Icons.star_rounded : Icons.star_outline_rounded,
+              color: asset.isPrimary ? AppColors.gold : null,
+            ),
+            tooltip: l10n.assetSetPrimaryAction,
+            onPressed: onSetPrimary,
+          ),
           IconButton(
             icon: const Icon(Icons.edit_rounded),
             tooltip: l10n.assetEditTitle,
@@ -339,6 +411,30 @@ class _AssetRow extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lencana kecil "Utama" di sebelah nama aset ber‑`isPrimary`.
+class _PrimaryBadge extends StatelessWidget {
+  const _PrimaryBadge({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.gold,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

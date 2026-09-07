@@ -33,6 +33,43 @@ void main() {
     expect(() => assets.delete(kMainAssetId), throwsArgumentError);
   });
 
+  test('setPrimary memindah flag — tepat satu aset primary', () async {
+    await assets.create(build('bca', name: 'BCA'));
+    await assets.create(build('gopay', name: 'GoPay'));
+
+    await assets.setPrimary('bca');
+    var all = await assets.getAll();
+    expect(all.where((a) => a.isPrimary).map((a) => a.id), ['bca']);
+
+    await assets.setPrimary('gopay');
+    all = await assets.getAll();
+    expect(all.where((a) => a.isPrimary).map((a) => a.id), ['gopay']);
+  });
+
+  test('Sumber Aset Utama tidak dapat dihapus', () async {
+    await assets.create(build('bca', name: 'BCA'));
+    await assets.setPrimary('bca');
+    expect(() => assets.delete('bca'), throwsArgumentError);
+  });
+
+  test('watchAll memancar ulang saat setPrimary', () async {
+    await assets.create(build('bca', name: 'BCA'));
+    final ids = <List<String>>[];
+    final sub = assets.watchAll().listen(
+      (list) => ids.add([
+        for (final a in list)
+          if (a.isPrimary) a.id,
+      ]),
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    await assets.setPrimary('bca');
+    await Future<void>.delayed(Duration.zero);
+
+    await sub.cancel();
+    expect(ids.last, ['bca']);
+  });
+
   test('create menolak nama kosong', () async {
     expect(() => assets.create(build('x', name: '  ')), throwsArgumentError);
   });

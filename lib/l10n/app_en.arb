@@ -4,6 +4,7 @@
   "navBeranda": "Home",
   "navRiwayat": "History",
   "navDashboard": "Dashboard",
+  "navAset": "Accounts",
 
   "homeBalanceLabel": "Current balance",
   "homeAddManual": "Add manually",
@@ -119,19 +120,29 @@
 
   "assetMainName": "Main Account",
   "assetManageTitle": "Manage Accounts",
-  "assetManageHint": "Press and drag to reorder. The Main Account stays on top and cannot be deleted.",
+  "assetManageHint": "Press and drag to reorder. Tap the star to set the Primary Account. The default account stays on top and cannot be deleted.",
   "assetAddTitle": "Add Account",
   "assetEditTitle": "Edit Account",
   "assetNameLabel": "Account name",
   "assetNameError": "Account name is required",
   "assetIconLabel": "Icon",
+  "assetTypeLabel": "Account type",
+  "assetTypeTunai": "Cash",
+  "assetTypeBank": "Bank",
+  "assetTypeEwallet": "E-Wallet",
+  "assetTypeBankDigital": "Digital Bank",
+  "assetTypeKartuKredit": "Credit Card",
+  "assetTypeInvestasi": "Investment",
+  "assetTypeLainnya": "Other",
+  "assetPrimaryBadge": "Primary",
+  "assetSetPrimaryAction": "Set as Primary Account",
   "assetEmpty": "No extra accounts yet. Tap \"Add Account\" to create one.",
   "assetDeleteConfirmTitle": "Delete account?",
   "assetDeleteConfirmEmpty": "Account \"{name}\" will be deleted.",
   "@assetDeleteConfirmEmpty": {
     "placeholders": {"name": {"type": "String"}}
   },
-  "assetDeleteConfirmReassign": "{count, plural, other{{count} transactions in account \"{name}\" will be moved to the Main Account, then the account is deleted.}}",
+  "assetDeleteConfirmReassign": "{count, plural, other{{count} transactions in account \"{name}\" will be moved to the Primary Account, then the account is deleted.}}",
   "@assetDeleteConfirmReassign": {
     "placeholders": {
       "count": {"type": "int"},

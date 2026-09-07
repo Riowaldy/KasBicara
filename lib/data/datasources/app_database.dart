@@ -20,7 +20,10 @@ const _passphraseKey = 'kasbicara_db_passphrase';
 ///
 /// v3: tabel `assets` + kolom `transactions.asset_id`. Transaksi lama
 /// di‑backfill ke Aset Utama.
-const _dbVersion = 3;
+///
+/// v4: kolom `assets.type` (kategori aset) + `assets.is_primary` ("Sumber
+/// Aset Utama" yang bisa dipindah pengguna). Aset bawaan di‑set primary.
+const _dbVersion = 4;
 
 /// Membuka & mengelola koneksi database SQLite terenkripsi (SQLCipher).
 ///
@@ -127,6 +130,7 @@ class AppDatabase {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _migrateToV2(db);
         if (oldVersion < 3) await _migrateToV3(db);
+        if (oldVersion < 4) await _migrateToV4(db);
       },
     );
   }
@@ -188,7 +192,9 @@ class AppDatabase {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         icon TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'tunai',
         is_default INTEGER NOT NULL DEFAULT 0,
+        is_primary INTEGER NOT NULL DEFAULT 0,
         sort_order INTEGER NOT NULL DEFAULT 0
       )
     ''');
@@ -227,6 +233,38 @@ class AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_transactions_asset '
       'ON transactions(asset_id)',
     );
+  }
+
+  /// Migrasi v3 → v4: kolom `assets.type` + `assets.is_primary`. Semua langkah
+  /// idempotent; sqflite membungkus `onUpgrade` dalam satu transaksi.
+  Future<void> _migrateToV4(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(assets)');
+    final hasType = columns.any((c) => c['name'] == 'type');
+    if (!hasType) {
+      await db.execute(
+        "ALTER TABLE assets ADD COLUMN type TEXT NOT NULL DEFAULT 'tunai'",
+      );
+    }
+    final hasIsPrimary = columns.any((c) => c['name'] == 'is_primary');
+    if (!hasIsPrimary) {
+      await db.execute(
+        'ALTER TABLE assets ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    // Tetapkan Aset Utama bawaan sebagai "Sumber Aset Utama" bila belum ada
+    // aset yang ditandai (mis. baris baru ditambahkan lewat migrasi terulang).
+    final primaryCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM assets WHERE is_primary = 1'),
+    );
+    if ((primaryCount ?? 0) == 0) {
+      await db.update(
+        'assets',
+        {'is_primary': 1},
+        where: 'id = ?',
+        whereArgs: [kMainAssetId],
+      );
+    }
   }
 
   Future<String> _getOrCreatePassphrase() async {

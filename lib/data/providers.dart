@@ -73,6 +73,19 @@ final assetsStreamProvider = StreamProvider<List<Asset>>((ref) async* {
   yield* repo.watchAll();
 });
 
+/// ID "Sumber Aset Utama" — aset ber‑`isPrimary`, fallback [kMainAssetId] bila
+/// stream belum siap atau (anomali) tak ada yang ditandai. Menyetir nilai awal
+/// field aset di form transaksi & target reassign saat aset lain dihapus.
+/// Sumber kebenaran ada di tabel `assets` — sengaja TANPA StateProvider
+/// (berbeda dari `activePocketProvider`).
+final primaryAssetIdProvider = Provider<String>((ref) {
+  final assets = ref.watch(assetsStreamProvider).valueOrNull ?? const [];
+  for (final a in assets) {
+    if (a.isPrimary) return a.id;
+  }
+  return kMainAssetId;
+});
+
 /// Konteks pocket aktif — SUMBER KEBENARAN TUNGGAL (konsep §05, sejajar
 /// dengan `activeLanguageProvider`). `null` = "Semua Pocket" (agregat,
 /// perilaku identik dengan aplikasi sebelum fitur pocket). Menyetir Saldo,

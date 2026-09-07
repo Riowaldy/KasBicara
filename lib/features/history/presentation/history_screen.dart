@@ -14,7 +14,6 @@ import '../../../shared/widgets/asset_selector.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
 import '../../../shared/widgets/pocket_selector.dart';
-import '../../assets/presentation/asset_manage_screen.dart';
 import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
@@ -239,17 +238,6 @@ class _FilterBar extends ConsumerWidget {
             ],
             onChanged: (value) =>
                 ref.read(historyCategoryFilterProvider.notifier).state = value,
-          ),
-          const SizedBox(width: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: ActionChip(
-              avatar: const Icon(Icons.tune_rounded, size: 18),
-              label: Text(l10n.assetManageTitle),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AssetManageScreen()),
-              ),
-            ),
           ),
         ],
       ),

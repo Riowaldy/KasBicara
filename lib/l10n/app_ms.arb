@@ -4,6 +4,7 @@
   "navBeranda": "Utama",
   "navRiwayat": "Sejarah",
   "navDashboard": "Papan Pemuka",
+  "navAset": "Aset",
 
   "homeBalanceLabel": "Baki semasa",
   "homeAddManual": "Tambah manual",
@@ -119,19 +120,29 @@
 
   "assetMainName": "Aset Utama",
   "assetManageTitle": "Urus Aset",
-  "assetManageHint": "Tahan dan seret untuk menyusun semula. Aset Utama sentiasa di atas dan tidak boleh dipadam.",
+  "assetManageHint": "Tahan dan seret untuk menyusun semula. Ketik bintang untuk menanda Sumber Aset Utama. Aset Utama lalai sentiasa di atas dan tidak boleh dipadam.",
   "assetAddTitle": "Tambah Aset",
   "assetEditTitle": "Ubah Aset",
   "assetNameLabel": "Nama aset",
   "assetNameError": "Nama aset wajib diisi",
   "assetIconLabel": "Ikon",
+  "assetTypeLabel": "Jenis aset",
+  "assetTypeTunai": "Tunai",
+  "assetTypeBank": "Bank",
+  "assetTypeEwallet": "E-Wallet",
+  "assetTypeBankDigital": "Bank Digital",
+  "assetTypeKartuKredit": "Kad Kredit",
+  "assetTypeInvestasi": "Pelaburan",
+  "assetTypeLainnya": "Lain-lain",
+  "assetPrimaryBadge": "Utama",
+  "assetSetPrimaryAction": "Jadikan Sumber Aset Utama",
   "assetEmpty": "Belum ada aset tambahan. Ketik \"Tambah Aset\" untuk membuat.",
   "assetDeleteConfirmTitle": "Padam aset?",
   "assetDeleteConfirmEmpty": "Aset \"{name}\" akan dipadam.",
   "@assetDeleteConfirmEmpty": {
     "placeholders": {"name": {"type": "String"}}
   },
-  "assetDeleteConfirmReassign": "{count, plural, other{{count} transaksi dalam aset \"{name}\" akan dipindahkan ke Aset Utama, kemudian aset dipadam.}}",
+  "assetDeleteConfirmReassign": "{count, plural, other{{count} transaksi dalam aset \"{name}\" akan dipindahkan ke Sumber Aset Utama, kemudian aset dipadam.}}",
   "@assetDeleteConfirmReassign": {
     "placeholders": {
       "count": {"type": "int"},
