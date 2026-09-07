@@ -60,7 +60,6 @@
 
   "addSheetTitle": "Add entry",
   "addSheetVoice": "By voice",
-  "addSheetVoiceSubtitle": "Say the transaction, we draft it for you",
   "addSheetManual": "Enter manually",
   "addSheetManualSubtitle": "Type the amount and details yourself",
   "addSheetScan": "Scan receipt",

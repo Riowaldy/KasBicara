@@ -172,12 +172,31 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
             ),
             const SizedBox(height: 14),
             Text(l10n.addSheetVoice, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                l10n.addSheetVoiceSubtitle,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall,
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                children: [
+                  Text(
+                    l10n.homeVoiceExampleTitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.homeVoiceExampleExpense,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  Text(
+                    l10n.homeVoiceExampleIncome,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
