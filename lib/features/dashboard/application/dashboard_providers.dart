@@ -43,6 +43,27 @@ final periodTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
   );
 });
 
+/// Beberapa transaksi terbaru (urut tanggal lalu waktu catat, terbaru dulu),
+/// sudah disaring [activePocketProvider] — untuk kartu "Transaksi Terakhir"
+/// di Dashboard. Default lima baris.
+final recentTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
+  ref,
+) {
+  final txAsync = ref.watch(transactionsStreamProvider);
+  final activePocket = ref.watch(activePocketProvider);
+  return txAsync.whenData((list) {
+    final rows =
+        [
+          for (final t in list)
+            if (activePocket == null || t.pocketId == activePocket) t,
+        ]..sort((a, b) {
+          final byDate = b.date.compareTo(a.date);
+          return byDate != 0 ? byDate : b.createdAt.compareTo(a.createdAt);
+        });
+    return rows.take(5).toList();
+  });
+});
+
 /// Ringkasan pemasukan/pengeluaran/selisih periode terpilih (pocket aktif).
 final periodSummaryProvider = Provider<AsyncValue<PeriodSummary>>((ref) {
   final txAsync = ref.watch(transactionsStreamProvider);

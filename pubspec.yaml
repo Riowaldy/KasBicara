@@ -49,6 +49,8 @@ dependencies:
   sqflite_sqlcipher: ^3.4.1
   flutter_secure_storage: ^11.0.0
   collection: ^1.19.1
+  image_picker: ^1.2.3
+  google_mlkit_text_recognition: ^0.17.1
 
 dev_dependencies:
   flutter_test:

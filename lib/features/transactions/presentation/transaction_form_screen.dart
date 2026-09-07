@@ -16,20 +16,33 @@ import '../../../shared/widgets/pocket_icons.dart';
 import '../../../shared/widgets/pocket_selector.dart';
 import '../../../shared/widgets/rupiah_input_formatter.dart';
 
+/// Asal draft yang mengisi form — menentukan ikon & judul kartu referensi.
+enum DraftSource { voice, receipt }
+
 /// Kartu konfirmasi/edit transaksi (PRD §6.2 & §6.3).
 ///
-/// Dipakai untuk tiga alur: tambah manual (keduanya null), edit transaksi
-/// tersimpan ([initial] terisi), dan konfirmasi hasil suara ([voiceDraft]
-/// terisi, Fase 3) — [initial] dan [voiceDraft] tidak pernah diisi bersamaan.
+/// Dipakai untuk beberapa alur: tambah manual (keduanya null), edit transaksi
+/// tersimpan ([initial] terisi), dan konfirmasi draft dari suara atau pindai
+/// struk ([voiceDraft] terisi) — [initial] dan [voiceDraft] tidak pernah diisi
+/// bersamaan. [draftDate] mengisi tanggal awal bila draft membawanya (mis.
+/// tanggal yang terbaca dari struk); [draftSource] menyetel label kartu
+/// referensi.
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, this.initial, this.voiceDraft})
-    : assert(
-        initial == null || voiceDraft == null,
-        'initial (edit) dan voiceDraft (tambah via suara) tidak boleh bersamaan',
-      );
+  const TransactionFormScreen({
+    super.key,
+    this.initial,
+    this.voiceDraft,
+    this.draftDate,
+    this.draftSource = DraftSource.voice,
+  }) : assert(
+         initial == null || voiceDraft == null,
+         'initial (edit) dan voiceDraft (draft) tidak boleh bersamaan',
+       );
 
   final Transaction? initial;
   final VoiceParseResult? voiceDraft;
+  final DateTime? draftDate;
+  final DraftSource draftSource;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -60,7 +73,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final draft = widget.voiceDraft;
 
     _type = initial?.type ?? draft?.type ?? TransactionType.keluar;
-    _date = date_utils.dateOnly(initial?.date ?? DateTime.now());
+    _date = date_utils.dateOnly(
+      initial?.date ?? widget.draftDate ?? DateTime.now(),
+    );
     _categoryId = initial?.category ?? draft?.category;
     // Nilai awal pocket (konsep "Pocket KasBicara" §06): transaksi lama pakai
     // pocket‑nya; selain itu ikut pocket aktif, atau Pocket Utama saat
@@ -130,20 +145,28 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Widget _buildVoiceReferenceCard(VoiceParseResult draft) {
+    final l10n = AppLocalizations.of(context)!;
+    final isReceipt = widget.draftSource == DraftSource.receipt;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.mic_rounded, size: 18, color: AppColors.gold),
+            Icon(
+              isReceipt ? Icons.receipt_long_rounded : Icons.mic_rounded,
+              size: 18,
+              color: AppColors.gold,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.formVoiceReferenceTitle,
+                    isReceipt
+                        ? l10n.formReceiptReferenceTitle
+                        : l10n.formVoiceReferenceTitle,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
@@ -206,7 +229,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       decoration: InputDecoration(
         labelText: l10n.formAmountLabel,
         prefixText: 'Rp ',
-        helperText: _amountNeedsAttention ? l10n.formAmountHelperVoice : null,
+        helperText: _amountNeedsAttention
+            ? (widget.draftSource == DraftSource.receipt
+                  ? l10n.formAmountHelperReceipt
+                  : l10n.formAmountHelperVoice)
+            : null,
         helperStyle: const TextStyle(color: AppColors.gold),
         enabledBorder: _amountNeedsAttention
             ? OutlineInputBorder(

@@ -31,6 +31,11 @@
 	<string>KasBicara membutuhkan akses mikrofon untuk mencatat transaksi lewat suara.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>KasBicara menggunakan pengenalan suara untuk mengubah ucapan Anda menjadi catatan transaksi.</string>
+	<!-- Dibutuhkan image_picker untuk fitur "Pindai struk" -->
+	<key>NSCameraUsageDescription</key>
+	<string>KasBicara membutuhkan akses kamera untuk memindai struk belanja Anda.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>KasBicara membutuhkan akses galeri untuk memilih foto struk belanja Anda.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

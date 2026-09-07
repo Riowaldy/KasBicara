@@ -33,6 +33,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Unduh model OCR ML Kit lewat Google Play saat aplikasi dipasang,
+             sehingga "Pindai struk" (google_mlkit_text_recognition) siap
+             tanpa menunggu unduhan saat pertama dipakai. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
