@@ -5,12 +5,10 @@ import '../core/utils/date_utils.dart';
 import 'datasources/app_database.dart';
 import 'models/asset_model.dart';
 import 'models/category_model.dart';
-import 'models/pocket_model.dart';
 import 'models/transaction_model.dart';
 import 'models/transaction_type.dart';
 import 'repositories/asset_repository.dart';
 import 'repositories/category_repository.dart';
-import 'repositories/pocket_repository.dart';
 import 'repositories/transaction_repository.dart';
 
 /// Koneksi database terenkripsi (dibuka sekali, di-cache oleh [AppDatabase]).
@@ -34,14 +32,6 @@ final categoryRepositoryProvider = FutureProvider<CategoryRepository>((
   return SqfliteCategoryRepository(db);
 });
 
-/// Repository pocket (konsep "Pocket KasBicara" §05).
-final pocketRepositoryProvider = FutureProvider<PocketRepository>((ref) async {
-  final db = await ref.watch(databaseProvider.future);
-  final repo = SqflitePocketRepository(db);
-  ref.onDispose(repo.dispose);
-  return repo;
-});
-
 /// Repository aset (sumber dana / akun).
 final assetRepositoryProvider = FutureProvider<AssetRepository>((ref) async {
   final db = await ref.watch(databaseProvider.future);
@@ -59,14 +49,7 @@ final transactionsStreamProvider = StreamProvider<List<Transaction>>((
   yield* repo.watchAll();
 });
 
-/// Seluruh pocket, reaktif — dikonsumsi selector header, dropdown form,
-/// & layar Kelola Pocket.
-final pocketsStreamProvider = StreamProvider<List<Pocket>>((ref) async* {
-  final repo = await ref.watch(pocketRepositoryProvider.future);
-  yield* repo.watchAll();
-});
-
-/// Seluruh aset, reaktif — dikonsumsi filter Riwayat, dropdown form, &
+/// Seluruh aset, reaktif — dikonsumsi selector header, dropdown form, &
 /// layar Kelola Aset.
 final assetsStreamProvider = StreamProvider<List<Asset>>((ref) async* {
   final repo = await ref.watch(assetRepositoryProvider.future);
@@ -74,10 +57,11 @@ final assetsStreamProvider = StreamProvider<List<Asset>>((ref) async* {
 });
 
 /// ID "Sumber Aset Utama" — aset ber‑`isPrimary`, fallback [kMainAssetId] bila
-/// stream belum siap atau (anomali) tak ada yang ditandai. Menyetir nilai awal
-/// field aset di form transaksi & target reassign saat aset lain dihapus.
-/// Sumber kebenaran ada di tabel `assets` — sengaja TANPA StateProvider
-/// (berbeda dari `activePocketProvider`).
+/// stream belum siap atau (anomali) tak ada yang ditandai. Dipakai sebagai
+/// fallback nilai awal field aset di form transaksi (saat konteks "Semua
+/// Aset") & target reassign saat aset lain dihapus. Sumber kebenaran ada di
+/// tabel `assets` — sengaja TANPA StateProvider (berbeda dari
+/// `activeAssetProvider` yang menyimpan konteks aktif).
 final primaryAssetIdProvider = Provider<String>((ref) {
   final assets = ref.watch(assetsStreamProvider).valueOrNull ?? const [];
   for (final a in assets) {
@@ -86,37 +70,19 @@ final primaryAssetIdProvider = Provider<String>((ref) {
   return kMainAssetId;
 });
 
-/// Konteks pocket aktif — SUMBER KEBENARAN TUNGGAL (konsep §05, sejajar
-/// dengan `activeLanguageProvider`). `null` = "Semua Pocket" (agregat,
-/// perilaku identik dengan aplikasi sebelum fitur pocket). Menyetir Saldo,
-/// Riwayat, Dashboard, & nilai awal field pocket di form.
-final activePocketProvider = StateProvider<String?>((ref) => null);
+/// Konteks aset aktif — SUMBER KEBENARAN TUNGGAL (sejajar dengan
+/// `activeLanguageProvider`). `null` = "Semua Aset" (agregat). Menyetir Saldo,
+/// Riwayat, Dashboard, & nilai awal field aset di form.
+final activeAssetProvider = StateProvider<String?>((ref) => null);
 
-/// Saldo — menghormati [activePocketProvider]: `null` = akumulasi semua
-/// transaksi (PRD §6.5), selain itu hanya pocket terpilih.
+/// Saldo — menghormati [activeAssetProvider]: `null` = akumulasi semua
+/// transaksi (PRD §6.5), selain itu hanya aset terpilih.
 final balanceProvider = Provider<AsyncValue<int>>((ref) {
   final txAsync = ref.watch(transactionsStreamProvider);
-  final activePocket = ref.watch(activePocketProvider);
+  final activeAsset = ref.watch(activeAssetProvider);
   return txAsync.whenData(
     (list) => list
-        .where((t) => activePocket == null || t.pocketId == activePocket)
-        .fold<int>(
-          0,
-          (sum, t) =>
-              sum + (t.type == TransactionType.masuk ? t.amount : -t.amount),
-        ),
-  );
-});
-
-/// Saldo satu pocket tertentu — dipakai layar Kelola Pocket.
-final pocketBalanceProvider = Provider.family<AsyncValue<int>, String>((
-  ref,
-  pocketId,
-) {
-  final txAsync = ref.watch(transactionsStreamProvider);
-  return txAsync.whenData(
-    (list) => list
-        .where((t) => t.pocketId == pocketId)
+        .where((t) => activeAsset == null || t.assetId == activeAsset)
         .fold<int>(
           0,
           (sum, t) =>

@@ -22,7 +22,7 @@ Uint8List buildExcelBytes(ExportData data) {
   excel.appendRow(_sheetTransaksi, [
     TextCellValue('Tanggal'),
     TextCellValue('Tipe'),
-    TextCellValue('Pocket'),
+    TextCellValue('Aset'),
     TextCellValue('Kategori'),
     TextCellValue('Keterangan'),
     TextCellValue('Jumlah'),
@@ -32,7 +32,7 @@ Uint8List buildExcelBytes(ExportData data) {
     excel.appendRow(_sheetTransaksi, [
       TextCellValue(date_utils.toDateString(t.date)),
       TextCellValue(t.type == TransactionType.masuk ? 'Masuk' : 'Keluar'),
-      TextCellValue(data.pocketNameFor(t)),
+      TextCellValue(data.assetNameFor(t)),
       TextCellValue(data.categoryNameFor(t)),
       TextCellValue(t.note ?? ''),
       DoubleCellValue(t.amount.toDouble()),

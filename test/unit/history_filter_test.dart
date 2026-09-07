@@ -18,7 +18,6 @@ void main() {
     TransactionType type = TransactionType.keluar,
     String category = 'expense-lainnya',
     String assetId = kMainAssetId,
-    String pocketId = 'pocket_main',
   }) {
     return Transaction(
       id: id,
@@ -29,7 +28,6 @@ void main() {
       createdAt: date,
       updatedAt: date,
       assetId: assetId,
-      pocketId: pocketId,
     );
   }
 
@@ -83,7 +81,7 @@ void main() {
     expect(ids(c), ['today']);
   });
 
-  test('filter tipe, aset, kategori, pocket digabung dengan AND', () async {
+  test('filter tipe, kategori, dan aset aktif digabung dengan AND', () async {
     final c = await containerWith([
       tx(
         id: 'keep',
@@ -91,7 +89,6 @@ void main() {
         type: TransactionType.masuk,
         category: 'income-gaji',
         assetId: 'bank',
-        pocketId: 'p2',
       ),
       tx(
         id: 'wrong-type',
@@ -99,7 +96,6 @@ void main() {
         type: TransactionType.keluar,
         category: 'income-gaji',
         assetId: 'bank',
-        pocketId: 'p2',
       ),
       tx(
         id: 'wrong-asset',
@@ -107,7 +103,6 @@ void main() {
         type: TransactionType.masuk,
         category: 'income-gaji',
         assetId: 'cash',
-        pocketId: 'p2',
       ),
       tx(
         id: 'wrong-cat',
@@ -115,23 +110,13 @@ void main() {
         type: TransactionType.masuk,
         category: 'income-bonus',
         assetId: 'bank',
-        pocketId: 'p2',
-      ),
-      tx(
-        id: 'wrong-pocket',
-        date: today,
-        type: TransactionType.masuk,
-        category: 'income-gaji',
-        assetId: 'bank',
-        pocketId: 'p9',
       ),
     ]);
 
     c.read(historyPeriodFilterProvider.notifier).state = HistoryPeriod.all;
     c.read(historyTypeFilterProvider.notifier).state = TransactionType.masuk;
-    c.read(historyAssetFilterProvider.notifier).state = 'bank';
     c.read(historyCategoryFilterProvider.notifier).state = 'income-gaji';
-    c.read(activePocketProvider.notifier).state = 'p2';
+    c.read(activeAssetProvider.notifier).state = 'bank';
 
     expect(ids(c), ['keep']);
   });

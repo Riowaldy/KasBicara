@@ -1,7 +1,6 @@
 {
   "@@locale": "ms",
 
-  "navBeranda": "Utama",
   "navRiwayat": "Sejarah",
   "navDashboard": "Papan Pemuka",
   "navAset": "Aset",
@@ -10,6 +9,7 @@
   "homeAddManual": "Tambah manual",
   "homeListening": "Mendengar...",
   "homePreparingMic": "Menyediakan mikrofon...",
+  "homeTapMicToStart": "Ketik mikrofon untuk mula bercakap",
   "homeProcessing": "Memproses...",
   "homeNoSpeechDetected": "Tiada pertuturan dikesan. Cuba lagi atau isi manual.",
   "micIdleLabel": "Rekod transaksi melalui suara. Ketik untuk mula bercakap.",
@@ -65,6 +65,7 @@
   "addSheetManualSubtitle": "Taip sendiri jumlah dan butirannya",
   "addSheetScan": "Imbas resit",
   "addSheetScanSubtitle": "Foto resit, jumlah & tarikh diisi automatik",
+  "addSheetOr": "atau",
 
   "scanSourceCamera": "Kamera",
   "scanSourceGallery": "Galeri",
@@ -83,8 +84,6 @@
   "formDateLabel": "Tarikh",
   "formCategoryLabel": "Kategori",
   "formCategoryError": "Pilih kategori",
-  "formPocketLabel": "Poket",
-  "formPocketError": "Pilih poket",
   "formAssetLabel": "Aset",
   "formAssetError": "Pilih aset",
   "formNoteLabel": "Catatan (pilihan)",
@@ -94,31 +93,8 @@
   "formReceiptReferenceTitle": "Hasil imbasan resit",
   "formAmountHelperReceipt": "Tidak terbaca daripada resit, isi manual",
 
-  "pocketMainName": "Poket Utama",
-  "pocketSelectorAll": "Semua Poket",
-  "pocketManageTitle": "Urus Poket",
-  "pocketManageTooltip": "Urus poket",
-  "pocketManageHint": "Tahan dan seret untuk menyusun semula. Poket Utama sentiasa di atas dan tidak boleh dipadam.",
-  "pocketAddTitle": "Tambah Poket",
-  "pocketEditTitle": "Ubah Poket",
-  "pocketNameLabel": "Nama poket",
-  "pocketNameError": "Nama poket wajib diisi",
-  "pocketIconLabel": "Ikon",
-  "pocketEmpty": "Belum ada poket tambahan. Ketik \"Tambah Poket\" untuk membuat.",
-  "pocketDeleteConfirmTitle": "Padam poket?",
-  "pocketDeleteConfirmEmpty": "Poket \"{name}\" akan dipadam.",
-  "@pocketDeleteConfirmEmpty": {
-    "placeholders": {"name": {"type": "String"}}
-  },
-  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transaksi dalam poket \"{name}\" akan dipindahkan ke Poket Utama, kemudian poket dipadam.}}",
-  "@pocketDeleteConfirmReassign": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "name": {"type": "String"}
-    }
-  },
-
   "assetMainName": "Aset Utama",
+  "assetSelectorAll": "Semua Aset",
   "assetManageTitle": "Urus Aset",
   "assetManageHint": "Tahan dan seret untuk menyusun semula. Ketik bintang untuk menanda Sumber Aset Utama. Aset Utama lalai sentiasa di atas dan tidak boleh dipadam.",
   "assetAddTitle": "Tambah Aset",

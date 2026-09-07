@@ -4,13 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasbicara/core/language/language_providers.dart';
 import 'package:kasbicara/data/datasources/default_assets.dart';
 import 'package:kasbicara/data/datasources/default_categories.dart';
-import 'package:kasbicara/data/datasources/default_pockets.dart';
 import 'package:kasbicara/data/providers.dart';
 import 'package:kasbicara/main.dart';
 
 import '../fakes/fake_asset_repository.dart';
 import '../fakes/fake_category_repository.dart';
-import '../fakes/fake_pocket_repository.dart';
 import '../fakes/fake_transaction_repository.dart';
 
 void main() {
@@ -27,9 +25,6 @@ void main() {
           categoryRepositoryProvider.overrideWith(
             (ref) async => FakeCategoryRepository(defaultCategories),
           ),
-          pocketRepositoryProvider.overrideWith(
-            (ref) async => FakePocketRepository(defaultPockets),
-          ),
           assetRepositoryProvider.overrideWith(
             (ref) async => FakeAssetRepository(defaultAssets),
           ),
@@ -45,8 +40,10 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    // 1. Tambah transaksi manual dari Beranda (default jenis: Keluar).
-    await tester.tap(find.text('Tambah manual'));
+    // 1. Tambah transaksi manual via FAB Dashboard (default jenis: Keluar).
+    await tester.tap(find.byKey(const Key('dashboard-add-fab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-manual')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('amount-field')), '50000');
@@ -58,8 +55,8 @@ void main() {
     await tester.tap(find.byKey(const Key('save-button')));
     await tester.pumpAndSettle();
 
-    // Kembali ke Beranda; saldo mencerminkan transaksi keluar.
-    expect(find.textContaining('50.000'), findsOneWidget);
+    // Kembali ke Dashboard; saldo & transaksi terakhir mencerminkan tx keluar.
+    expect(find.textContaining('50.000'), findsWidgets);
 
     // 2. Pindah ke tab Riwayat, transaksi baru harus tampil.
     await tester.tap(find.text('Riwayat'));

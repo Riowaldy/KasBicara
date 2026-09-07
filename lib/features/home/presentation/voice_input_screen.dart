@@ -3,97 +3,100 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/language/app_language.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/currency_utils.dart';
 import '../../../core/voice/voice_parser_provider.dart';
-import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/pocket_selector.dart';
-import '../../pockets/presentation/pocket_manage_screen.dart';
-import '../../settings/presentation/language_dialog.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/voice_input_controller.dart';
 
-/// Layar Beranda — Flow A (PRD §11): tekan mic, bicara, tinjau draft di
-/// kartu konfirmasi. Input manual (Fase 2) tetap tersedia sebagai pelengkap
-/// & fallback bila suara tidak tersedia (PRD §13).
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+/// Layar input suara — Flow A (PRD §11): tekan mic, bicara, tinjau draft di
+/// form transaksi. Dibuka dari lembar "Tambah Data" di Dashboard (pilihan
+/// mic), bukan lagi tab tersendiri.
+class VoiceInputScreen extends ConsumerStatefulWidget {
+  const VoiceInputScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<VoiceInputScreen> createState() => _VoiceInputScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _VoiceInputScreenState extends ConsumerState<VoiceInputScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Pengguna sudah memilih "lewat suara" — langsung mulai mendengarkan.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = ref.read(voiceInputControllerProvider.notifier);
+      if (ref.read(voiceInputControllerProvider).status !=
+          VoiceInputStatus.listening) {
+        controller.startListening();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final balanceAsync = ref.watch(balanceProvider);
     final voiceState = ref.watch(voiceInputControllerProvider);
-    final activePocket = ref.watch(activePocketProvider);
-    final pockets = ref.watch(pocketsStreamProvider).valueOrNull ?? const [];
 
     ref.listen(voiceInputControllerProvider, _handleVoiceStateChange);
 
-    var balanceLabel = l10n.homeBalanceLabel;
-    if (activePocket != null) {
-      final match = pockets.where((p) => p.id == activePocket);
-      if (match.isNotEmpty) balanceLabel = pocketDisplayName(match.first, l10n);
-    }
+    // Contoh kalimat tampil selama pengguna belum benar-benar berbicara —
+    // hilang begitu transkrip masuk atau draft sedang diproses.
+    final showExamples =
+        voiceState.transcript.isEmpty &&
+        voiceState.status != VoiceInputStatus.processing &&
+        voiceState.status != VoiceInputStatus.done;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('KasBicara'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            tooltip: l10n.pocketManageTooltip,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PocketManageScreen()),
+      appBar: AppBar(title: Text(l10n.addSheetVoice)),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MicButton(state: voiceState, onTap: _onMicTap),
+            const SizedBox(height: 16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: _buildStatusLine(voiceState, l10n),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.language_rounded),
-            tooltip: l10n.settingsLanguageTooltip,
-            onPressed: () => showLanguageDialog(context, ref),
-          ),
-        ],
+            if (showExamples) ...[
+              const SizedBox(height: 8),
+              _buildExamples(l10n),
+            ],
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => _openManualForm(context),
+              child: Text(l10n.homeAddManual),
+            ),
+          ],
+        ),
       ),
-      body: Column(
+    );
+  }
+
+  Widget _buildExamples(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 8),
-          const PocketSelector(),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  balanceAsync.when(
-                    loading: () => const CircularProgressIndicator(),
-                    error: (e, _) => Text('Gagal memuat saldo: $e'),
-                    data: (balance) => Text(
-                      formatRupiah(balance),
-                      style: Theme.of(context).textTheme.displayLarge,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    balanceLabel,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 48),
-                  _MicButton(state: voiceState, onTap: _onMicTap),
-                  const SizedBox(height: 16),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 48),
-                    child: _buildStatusLine(voiceState, l10n),
-                  ),
-                  TextButton(
-                    onPressed: () => _openManualForm(context),
-                    child: Text(l10n.homeAddManual),
-                  ),
-                ],
-              ),
-            ),
+          Text(
+            l10n.homeVoiceExampleTitle,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.homeVoiceExampleExpense,
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+          ),
+          Text(
+            l10n.homeVoiceExampleIncome,
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -123,34 +126,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: Theme.of(context).textTheme.bodyMedium,
         );
       case VoiceInputStatus.idle:
-        // Contoh ucapan agar pengguna tidak bingung mau bilang apa — hilang
-        // begitu mic mulai mendengarkan (transcript live mengambil alih).
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                l10n.homeVoiceExampleTitle,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.homeVoiceExampleExpense,
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-              ),
-              Text(
-                l10n.homeVoiceExampleIncome,
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
+        // Contoh ucapan ditampilkan terpisah di bawah (lihat _buildExamples).
+        return Text(
+          l10n.homeTapMicToStart,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
         );
       case VoiceInputStatus.done:
       case VoiceInputStatus.unavailable:

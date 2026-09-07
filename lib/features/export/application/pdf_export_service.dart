@@ -125,7 +125,7 @@ pw.Widget _buildTransactionsTable(ExportData data) {
   }
 
   return pw.TableHelper.fromTextArray(
-    headers: ['Tanggal', 'Tipe', 'Pocket', 'Kategori', 'Keterangan', 'Jumlah'],
+    headers: ['Tanggal', 'Tipe', 'Aset', 'Kategori', 'Keterangan', 'Jumlah'],
     headerStyle: pw.TextStyle(
       fontSize: 9,
       fontWeight: pw.FontWeight.bold,
@@ -141,7 +141,7 @@ pw.Widget _buildTransactionsTable(ExportData data) {
       return [
         date_utils.toDateString(t.date),
         isIncome ? 'Masuk' : 'Keluar',
-        data.pocketNameFor(t),
+        data.assetNameFor(t),
         data.categoryNameFor(t),
         t.note ?? '-',
         '${isIncome ? '+' : '-'}${formatRupiah(t.amount)}',

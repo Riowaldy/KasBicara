@@ -1,7 +1,7 @@
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasbicara/data/models/asset_model.dart';
 import 'package:kasbicara/data/models/category_model.dart';
-import 'package:kasbicara/data/models/pocket_model.dart';
 import 'package:kasbicara/data/models/transaction_model.dart';
 import 'package:kasbicara/data/models/transaction_type.dart';
 import 'package:kasbicara/features/export/application/excel_export_service.dart';
@@ -59,7 +59,7 @@ void main() {
         ),
       ],
       categoriesById: {'expense-makanan-minuman': makanan, 'income-gaji': gaji},
-      pocketNamesById: const {kMainPocketId: 'Pocket Utama'},
+      assetNamesById: const {kMainAssetId: 'Aset Utama'},
       periodLabel: 'Agustus 2026',
     );
   }
@@ -76,14 +76,14 @@ void main() {
     expect(transaksiRows[0].map((c) => c?.value.toString()).toList(), [
       'Tanggal',
       'Tipe',
-      'Pocket',
+      'Aset',
       'Kategori',
       'Keterangan',
       'Jumlah',
     ]);
     expect(transaksiRows[1][0]?.value.toString(), '2026-08-08');
     expect(transaksiRows[1][1]?.value.toString(), 'Keluar');
-    expect(transaksiRows[1][2]?.value.toString(), 'Pocket Utama');
+    expect(transaksiRows[1][2]?.value.toString(), 'Aset Utama');
     expect(transaksiRows[1][3]?.value.toString(), 'Makanan & Minuman');
     expect(transaksiRows[1][4]?.value.toString(), 'Makan siang');
     expect(_numValue(transaksiRows[1][5]?.value), 50000);

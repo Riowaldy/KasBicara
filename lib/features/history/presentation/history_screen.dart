@@ -13,7 +13,6 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/asset_selector.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
-import '../../../shared/widgets/pocket_selector.dart';
 import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
@@ -61,7 +60,7 @@ class HistoryScreen extends ConsumerWidget {
       body: Column(
         children: [
           const SizedBox(height: 8),
-          const PocketSelector(),
+          const AssetSelector(),
           const _FilterBar(),
           const Divider(height: 1),
           Expanded(
@@ -94,12 +93,10 @@ class HistoryScreen extends ConsumerWidget {
     final transactions = ref.read(filteredTransactionsProvider).value ?? [];
     final period = ref.read(historyPeriodFilterProvider);
     final typeFilter = ref.read(historyTypeFilterProvider);
-    final assetFilter = ref.read(historyAssetFilterProvider);
     final categoryFilter = ref.read(historyCategoryFilterProvider);
     final categories = ref.read(categoriesProvider).value ?? [];
     final assets = ref.read(assetsStreamProvider).valueOrNull ?? const [];
-    final activePocket = ref.read(activePocketProvider);
-    final pockets = ref.read(pocketsStreamProvider).valueOrNull ?? const [];
+    final activeAsset = ref.read(activeAssetProvider);
 
     final periodText = period == HistoryPeriod.all
         ? l10n.exportAllMonths
@@ -115,25 +112,13 @@ class HistoryScreen extends ConsumerWidget {
               .where((c) => c.id == categoryFilter)
               .map((c) => c.name)
               .firstOrNull;
-    final assetName = assetFilter == null
+    final assetName = activeAsset == null
         ? null
         : assets
-              .where((a) => a.id == assetFilter)
+              .where((a) => a.id == activeAsset)
               .map((a) => assetDisplayName(a, l10n))
               .firstOrNull;
-    final pocketName = activePocket == null
-        ? null
-        : pockets
-              .where((p) => p.id == activePocket)
-              .map((p) => pocketDisplayName(p, l10n))
-              .firstOrNull;
-    final labelParts = [
-      periodText,
-      ?typeName,
-      ?categoryName,
-      ?assetName,
-      ?pocketName,
-    ];
+    final labelParts = [periodText, ?typeName, ?categoryName, ?assetName];
     final periodLabel = labelParts.join(' · ');
 
     if (!context.mounted) return;
@@ -154,14 +139,11 @@ class _FilterBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesProvider);
-    final assetsAsync = ref.watch(assetsStreamProvider);
     final selectedPeriod = ref.watch(historyPeriodFilterProvider);
     final selectedType = ref.watch(historyTypeFilterProvider);
-    final selectedAsset = ref.watch(historyAssetFilterProvider);
     final selectedCategory = ref.watch(historyCategoryFilterProvider);
 
     final categories = categoriesAsync.valueOrNull ?? const [];
-    final assets = assetsAsync.valueOrNull ?? const [];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -203,25 +185,6 @@ class _FilterBar extends ConsumerWidget {
             ],
             onChanged: (value) =>
                 ref.read(historyTypeFilterProvider.notifier).state = value,
-          ),
-          const SizedBox(width: 12),
-          _FilterDropdown<String?>(
-            fieldKey: const Key('asset-filter'),
-            label: l10n.historyAssetLabel,
-            value: assets.any((a) => a.id == selectedAsset)
-                ? selectedAsset
-                : null,
-            items: [
-              DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
-              ...assets.map(
-                (a) => DropdownMenuItem(
-                  value: a.id,
-                  child: Text(assetDisplayName(a, l10n)),
-                ),
-              ),
-            ],
-            onChanged: (value) =>
-                ref.read(historyAssetFilterProvider.notifier).state = value,
           ),
           const SizedBox(width: 12),
           _FilterDropdown<String?>(
@@ -321,12 +284,12 @@ class _TransactionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesProvider);
-    // Nama pocket hanya ditampilkan saat konteks "Semua Pocket" (konsep §08).
-    final showPocketName = ref.watch(activePocketProvider) == null;
-    final pocketName = showPocketName
-        ? (ref.watch(pocketsStreamProvider).valueOrNull ?? const [])
-              .where((p) => p.id == transaction.pocketId)
-              .map((p) => pocketDisplayName(p, l10n))
+    // Nama aset hanya ditampilkan saat konteks "Semua Aset".
+    final showAssetName = ref.watch(activeAssetProvider) == null;
+    final assetName = showAssetName
+        ? (ref.watch(assetsStreamProvider).valueOrNull ?? const [])
+              .where((a) => a.id == transaction.assetId)
+              .map((a) => assetDisplayName(a, l10n))
               .firstOrNull
         : null;
     final categoryName = categoriesAsync.maybeWhen(
@@ -382,7 +345,7 @@ class _TransactionTile extends ConsumerWidget {
             ),
           ),
           title: Text(categoryName ?? transaction.category),
-          subtitle: _buildSubtitle(pocketName, transaction.note),
+          subtitle: _buildSubtitle(assetName, transaction.note),
           trailing: Text(
             '$sign${formatRupiah(transaction.amount)}',
             style: TextStyle(color: amountColor, fontWeight: FontWeight.w600),
@@ -397,16 +360,16 @@ class _TransactionTile extends ConsumerWidget {
     );
   }
 
-  /// Subtitle baris: nama pocket (hanya di konteks "Semua Pocket") di atas
+  /// Subtitle baris: nama aset (hanya di konteks "Semua Aset") di atas
   /// keterangan. `null` bila keduanya kosong.
-  Widget? _buildSubtitle(String? pocketName, String? note) {
-    if (pocketName == null && note == null) return null;
+  Widget? _buildSubtitle(String? assetName, String? note) {
+    if (assetName == null && note == null) return null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (pocketName != null)
+        if (assetName != null)
           Text(
-            pocketName,
+            assetName,
             style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
           ),
         if (note != null) Text(note),

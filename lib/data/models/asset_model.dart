@@ -7,8 +7,8 @@ import 'asset_type.dart';
 const kMainAssetId = 'asset_main';
 
 /// Sumber dana / akun tempat uang benar‑benar berada (mis. Tunai, rekening
-/// bank, e‑wallet). Berdampingan dengan [Pocket]: pocket = alokasi tujuan,
-/// aset = wadah fisik/rekening. Strukturnya sengaja meniru [Pocket].
+/// bank, e‑wallet). Dimensi pengelompokan utama transaksi: setiap transaksi
+/// terikat tepat satu aset.
 ///
 /// Saldo TIDAK disimpan di sini — selalu dihitung ulang dari transaksi yang
 /// menunjuk ke aset ini (lihat `assetBalanceProvider`).
@@ -32,7 +32,7 @@ class Asset {
   final String name;
 
   /// Kunci string ikon, dipetakan ke `IconData` di layer UI
-  /// (`shared/widgets/asset_icons.dart`) — pola sama seperti pocket.
+  /// (`shared/widgets/asset_icons.dart`).
   final String icon;
 
   /// Kategori aset (Tunai, Bank, E‑Wallet, dst.). Dipilih pengguna di form.

@@ -1,7 +1,6 @@
 {
   "@@locale": "en",
 
-  "navBeranda": "Home",
   "navRiwayat": "History",
   "navDashboard": "Dashboard",
   "navAset": "Accounts",
@@ -10,6 +9,7 @@
   "homeAddManual": "Add manually",
   "homeListening": "Listening...",
   "homePreparingMic": "Preparing microphone...",
+  "homeTapMicToStart": "Tap the mic to start speaking",
   "homeProcessing": "Processing...",
   "homeNoSpeechDetected": "No speech detected. Try again or enter manually.",
   "micIdleLabel": "Record a transaction by voice. Tap to start speaking.",
@@ -65,6 +65,7 @@
   "addSheetManualSubtitle": "Type the amount and details yourself",
   "addSheetScan": "Scan receipt",
   "addSheetScanSubtitle": "Snap a receipt; amount & date fill in automatically",
+  "addSheetOr": "or",
 
   "scanSourceCamera": "Camera",
   "scanSourceGallery": "Gallery",
@@ -83,8 +84,6 @@
   "formDateLabel": "Date",
   "formCategoryLabel": "Category",
   "formCategoryError": "Choose a category",
-  "formPocketLabel": "Pocket",
-  "formPocketError": "Choose a pocket",
   "formAssetLabel": "Account",
   "formAssetError": "Choose an account",
   "formNoteLabel": "Note (optional)",
@@ -94,31 +93,8 @@
   "formReceiptReferenceTitle": "Receipt scan result",
   "formAmountHelperReceipt": "Not read from the receipt, enter manually",
 
-  "pocketMainName": "Main Pocket",
-  "pocketSelectorAll": "All Pockets",
-  "pocketManageTitle": "Manage Pockets",
-  "pocketManageTooltip": "Manage pockets",
-  "pocketManageHint": "Press and drag to reorder. The Main Pocket stays on top and cannot be deleted.",
-  "pocketAddTitle": "Add Pocket",
-  "pocketEditTitle": "Edit Pocket",
-  "pocketNameLabel": "Pocket name",
-  "pocketNameError": "Pocket name is required",
-  "pocketIconLabel": "Icon",
-  "pocketEmpty": "No extra pockets yet. Tap \"Add Pocket\" to create one.",
-  "pocketDeleteConfirmTitle": "Delete pocket?",
-  "pocketDeleteConfirmEmpty": "Pocket \"{name}\" will be deleted.",
-  "@pocketDeleteConfirmEmpty": {
-    "placeholders": {"name": {"type": "String"}}
-  },
-  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transactions in pocket \"{name}\" will be moved to the Main Pocket, then the pocket is deleted.}}",
-  "@pocketDeleteConfirmReassign": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "name": {"type": "String"}
-    }
-  },
-
   "assetMainName": "Main Account",
+  "assetSelectorAll": "All Accounts",
   "assetManageTitle": "Manage Accounts",
   "assetManageHint": "Press and drag to reorder. Tap the star to set the Primary Account. The default account stays on top and cannot be deleted.",
   "assetAddTitle": "Add Account",

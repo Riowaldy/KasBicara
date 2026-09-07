@@ -1,8 +1,6 @@
 {
   "@@locale": "id",
 
-  "navBeranda": "Beranda",
-  "@navBeranda": {"description": "Label tab navigasi Beranda"},
   "navRiwayat": "Riwayat",
   "@navRiwayat": {"description": "Label tab navigasi Riwayat"},
   "navDashboard": "Dashboard",
@@ -14,6 +12,7 @@
   "homeAddManual": "Tambah manual",
   "homeListening": "Mendengarkan...",
   "homePreparingMic": "Menyiapkan mikrofon...",
+  "homeTapMicToStart": "Ketuk mikrofon untuk mulai bicara",
   "homeProcessing": "Memproses...",
   "homeNoSpeechDetected": "Tidak ada ucapan terdeteksi. Coba lagi atau isi manual.",
   "micIdleLabel": "Catat transaksi lewat suara. Ketuk untuk mulai bicara.",
@@ -69,6 +68,7 @@
   "addSheetManualSubtitle": "Ketik sendiri jumlah dan detailnya",
   "addSheetScan": "Pindai struk",
   "addSheetScanSubtitle": "Foto struk, jumlah & tanggal terisi otomatis",
+  "addSheetOr": "atau",
 
   "scanSourceCamera": "Kamera",
   "scanSourceGallery": "Galeri",
@@ -87,8 +87,6 @@
   "formDateLabel": "Tanggal",
   "formCategoryLabel": "Kategori",
   "formCategoryError": "Pilih kategori",
-  "formPocketLabel": "Pocket",
-  "formPocketError": "Pilih pocket",
   "formAssetLabel": "Aset",
   "formAssetError": "Pilih aset",
   "formNoteLabel": "Keterangan (opsional)",
@@ -98,31 +96,8 @@
   "formReceiptReferenceTitle": "Hasil pindai struk",
   "formAmountHelperReceipt": "Tidak terbaca dari struk, isi manual",
 
-  "pocketMainName": "Pocket Utama",
-  "pocketSelectorAll": "Semua Pocket",
-  "pocketManageTitle": "Kelola Pocket",
-  "pocketManageTooltip": "Kelola pocket",
-  "pocketManageHint": "Tahan lalu geser untuk mengubah urutan. Pocket Utama selalu di atas dan tidak dapat dihapus.",
-  "pocketAddTitle": "Tambah Pocket",
-  "pocketEditTitle": "Ubah Pocket",
-  "pocketNameLabel": "Nama pocket",
-  "pocketNameError": "Nama pocket wajib diisi",
-  "pocketIconLabel": "Ikon",
-  "pocketEmpty": "Belum ada pocket tambahan. Ketuk \"Tambah Pocket\" untuk membuat.",
-  "pocketDeleteConfirmTitle": "Hapus pocket?",
-  "pocketDeleteConfirmEmpty": "Pocket \"{name}\" akan dihapus.",
-  "@pocketDeleteConfirmEmpty": {
-    "placeholders": {"name": {"type": "String"}}
-  },
-  "pocketDeleteConfirmReassign": "{count, plural, other{{count} transaksi di pocket \"{name}\" akan dipindahkan ke Pocket Utama, lalu pocket dihapus.}}",
-  "@pocketDeleteConfirmReassign": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "name": {"type": "String"}
-    }
-  },
-
   "assetMainName": "Aset Utama",
+  "assetSelectorAll": "Semua Aset",
   "assetManageTitle": "Kelola Aset",
   "assetManageHint": "Tahan lalu geser untuk mengubah urutan. Ketuk bintang untuk menandai Sumber Aset Utama. Aset Utama bawaan selalu di atas dan tidak dapat dihapus.",
   "assetAddTitle": "Tambah Aset",

@@ -6,24 +6,25 @@ import 'package:path/path.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import '../models/asset_model.dart';
-import '../models/pocket_model.dart';
 import 'default_assets.dart';
 import 'default_categories.dart';
-import 'default_pockets.dart';
 
 /// Nama file database & kunci penyimpanan passphrase di secure storage.
 const _dbFileName = 'kasbicara.db';
 const _passphraseKey = 'kasbicara_db_passphrase';
 
-/// v2 (konsep "Pocket KasBicara" §04): tabel `pockets` + kolom
-/// `transactions.pocket_id`. Transaksi lama di‑backfill ke Pocket Utama.
+/// v2 (usang): dulu menambah tabel `pockets` + kolom `transactions.pocket_id`.
+/// Fitur Pocket dihapus di v5, jadi migrasi v2 kini tak berbuat apa‑apa.
 ///
 /// v3: tabel `assets` + kolom `transactions.asset_id`. Transaksi lama
 /// di‑backfill ke Aset Utama.
 ///
 /// v4: kolom `assets.type` (kategori aset) + `assets.is_primary` ("Sumber
 /// Aset Utama" yang bisa dipindah pengguna). Aset bawaan di‑set primary.
-const _dbVersion = 4;
+///
+/// v5: fitur Pocket dihapus — `DROP TABLE pockets`, `DROP INDEX`, dan
+/// `DROP COLUMN transactions.pocket_id` (fallback: kolom dibiarkan yatim).
+const _dbVersion = 5;
 
 /// Membuka & mengelola koneksi database SQLite terenkripsi (SQLCipher).
 ///
@@ -82,7 +83,6 @@ class AppDatabase {
             date TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            pocket_id TEXT NOT NULL DEFAULT '$kMainPocketId',
             asset_id TEXT NOT NULL DEFAULT '$kMainAssetId'
           )
         ''');
@@ -94,13 +94,9 @@ class AppDatabase {
           'CREATE INDEX idx_transactions_category ON transactions(category)',
         );
         await db.execute(
-          'CREATE INDEX idx_transactions_pocket ON transactions(pocket_id)',
-        );
-        await db.execute(
           'CREATE INDEX idx_transactions_asset ON transactions(asset_id)',
         );
 
-        await _createPocketsTable(db);
         await _createAssetsTable(db);
 
         final batch = db.batch();
@@ -108,13 +104,6 @@ class AppDatabase {
           batch.insert(
             'categories',
             category.toMap(),
-            conflictAlgorithm: ConflictAlgorithm.ignore,
-          );
-        }
-        for (final pocket in defaultPockets) {
-          batch.insert(
-            'pockets',
-            pocket.toMap(),
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
         }
@@ -131,58 +120,16 @@ class AppDatabase {
         if (oldVersion < 2) await _migrateToV2(db);
         if (oldVersion < 3) await _migrateToV3(db);
         if (oldVersion < 4) await _migrateToV4(db);
+        if (oldVersion < 5) await _migrateToV5(db);
       },
     );
   }
 
-  /// Skema tabel `pockets` — dipakai `onCreate` (instalasi baru) &
-  /// `_migrateToV2` (upgrade). Idempotent lewat `IF NOT EXISTS`.
-  Future<void> _createPocketsTable(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS pockets (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        icon TEXT NOT NULL,
-        is_default INTEGER NOT NULL DEFAULT 0,
-        sort_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-  }
-
-  /// Migrasi v1 → v2 (konsep "Pocket KasBicara" §04). Semua langkah
-  /// idempotent; sqflite membungkus `onUpgrade` dalam satu transaksi.
-  Future<void> _migrateToV2(Database db) async {
-    await _createPocketsTable(db);
-
-    for (final pocket in defaultPockets) {
-      await db.insert(
-        'pockets',
-        pocket.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
-    }
-
-    // Tambah kolom hanya bila belum ada (aman kalau migrasi terulang).
-    final columns = await db.rawQuery('PRAGMA table_info(transactions)');
-    final hasPocketId = columns.any((c) => c['name'] == 'pocket_id');
-    if (!hasPocketId) {
-      await db.execute(
-        "ALTER TABLE transactions ADD COLUMN pocket_id TEXT NOT NULL "
-        "DEFAULT '$kMainPocketId'",
-      );
-    }
-
-    // DEFAULT sudah mengisi baris lama; UPDATE eksplisit sebagai jaring
-    // pengaman untuk baris yang mungkin lolos (mis. NULL dari migrasi lama).
-    await db.update('transactions', {
-      'pocket_id': kMainPocketId,
-    }, where: "pocket_id IS NULL OR pocket_id = ''");
-
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_transactions_pocket '
-      'ON transactions(pocket_id)',
-    );
-  }
+  /// Migrasi v1 → v2 — dulu memasang fitur Pocket. Fitur itu dihapus di v5,
+  /// jadi langkah ini sengaja tak berbuat apa‑apa (dipertahankan hanya karena
+  /// `onUpgrade` memanggilnya untuk DB yang benar‑benar lama). `_migrateToV5`
+  /// membersihkan sisa tabel/kolom pocket bila ada.
+  Future<void> _migrateToV2(Database db) async {}
 
   /// Skema tabel `assets` — dipakai `onCreate` (instalasi baru) &
   /// `_migrateToV3` (upgrade). Idempotent lewat `IF NOT EXISTS`.
@@ -264,6 +211,25 @@ class AppDatabase {
         where: 'id = ?',
         whereArgs: [kMainAssetId],
       );
+    }
+  }
+
+  /// Migrasi v4 → v5: fitur Pocket dihapus. Buang tabel `pockets`, indeks
+  /// terkait, dan kolom `transactions.pocket_id`. Semua langkah idempotent &
+  /// aman bila artefak pocket memang tak pernah ada (guard `IF EXISTS` /
+  /// pengecekan PRAGMA). `DROP COLUMN` butuh SQLite ≥ 3.35 — bila ditolak,
+  /// kolom dibiarkan yatim (tak ada kode yang membacanya lagi).
+  Future<void> _migrateToV5(Database db) async {
+    await db.execute('DROP INDEX IF EXISTS idx_transactions_pocket');
+    await db.execute('DROP TABLE IF EXISTS pockets');
+
+    final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+    if (columns.any((c) => c['name'] == 'pocket_id')) {
+      try {
+        await db.execute('ALTER TABLE transactions DROP COLUMN pocket_id');
+      } catch (_) {
+        // SQLite lawas tanpa DROP COLUMN — biarkan kolom yatim.
+      }
     }
   }
 

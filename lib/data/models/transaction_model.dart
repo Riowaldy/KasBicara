@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/utils/date_utils.dart' as date_utils;
 import 'asset_model.dart';
-import 'pocket_model.dart';
 import 'transaction_type.dart';
 
 /// Entitas transaksi sesuai skema PRD §9.
@@ -20,7 +19,6 @@ class Transaction {
     required this.date,
     required this.createdAt,
     required this.updatedAt,
-    this.pocketId = kMainPocketId,
     this.assetId = kMainAssetId,
   });
 
@@ -34,11 +32,6 @@ class Transaction {
   final DateTime date;
   final DateTime createdAt;
   final DateTime updatedAt;
-
-  /// Pocket tempat transaksi ini dicatat (konsep "Pocket KasBicara" §02).
-  /// Wajib & tunggal — default [kMainPocketId] agar transaksi tanpa pilihan
-  /// eksplisit (mis. data pra‑migrasi, tes lama) tetap konsisten.
-  final String pocketId;
 
   /// Aset (sumber dana / akun) tempat transaksi ini tercatat. Wajib &
   /// tunggal — default [kMainAssetId] agar transaksi tanpa pilihan eksplisit
@@ -65,7 +58,6 @@ class Transaction {
     DateTime? date,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? pocketId,
     String? assetId,
   }) {
     return Transaction(
@@ -77,7 +69,6 @@ class Transaction {
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      pocketId: pocketId ?? this.pocketId,
       assetId: assetId ?? this.assetId,
     );
   }
@@ -92,7 +83,6 @@ class Transaction {
       'date': date_utils.toDateString(date),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'pocket_id': pocketId,
       'asset_id': assetId,
     };
   }
@@ -107,7 +97,6 @@ class Transaction {
       date: DateTime.parse(map['date'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
-      pocketId: (map['pocket_id'] as String?) ?? kMainPocketId,
       assetId: (map['asset_id'] as String?) ?? kMainAssetId,
     );
   }
@@ -125,7 +114,6 @@ class Transaction {
           date == other.date &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt &&
-          pocketId == other.pocketId &&
           assetId == other.assetId;
 
   @override
@@ -138,14 +126,13 @@ class Transaction {
     date,
     createdAt,
     updatedAt,
-    pocketId,
     assetId,
   );
 
   @override
   String toString() =>
       'Transaction(id: $id, type: $type, amount: $amount, '
-      'category: $category, pocket: $pocketId, asset: $assetId, '
+      'category: $category, asset: $assetId, '
       'date: ${date_utils.toDateString(date)})';
 }
 

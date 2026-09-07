@@ -4,7 +4,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import '../models/asset_model.dart';
 
-/// Kontrak akses data aset (strukturnya meniru `PocketRepository`).
+/// Kontrak akses data aset.
 ///
 /// Aset Utama sudah di‑seed saat database dibuat/di‑upgrade — lihat
 /// `AppDatabase` (`onCreate` / `onUpgrade`). Integritas relasi transaksi↔

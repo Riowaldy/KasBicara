@@ -13,7 +13,7 @@ import '../../../shared/widgets/asset_selector.dart';
 
 /// Layar "Kelola Aset": daftar aset + saldo, tambah/ubah/hapus, susun ulang,
 /// dan menandai "Sumber Aset Utama". Aset Utama bawaan terkunci di posisi
-/// teratas dan tidak dapat dihapus. Strukturnya meniru `PocketManageScreen`.
+/// teratas dan tidak dapat dihapus.
 class AssetManageScreen extends ConsumerWidget {
   const AssetManageScreen({super.key});
 

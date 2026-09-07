@@ -18,9 +18,6 @@ final historyTypeFilterProvider = StateProvider<TransactionType?>(
   (ref) => null,
 );
 
-/// Filter aset aktif. `null` = semua aset.
-final historyAssetFilterProvider = StateProvider<String?>((ref) => null);
-
 /// Filter kategori aktif di layar Riwayat. `null` berarti "semua kategori".
 final historyCategoryFilterProvider = StateProvider<String?>((ref) => null);
 
@@ -53,17 +50,17 @@ final historyCategoryFilterProvider = StateProvider<String?>((ref) => null);
 }
 
 /// Transaksi setelah difilter — reaktif terhadap data & filter aktif (FR-7).
-/// Menggabungkan filter waktu, tipe, aset, kategori (di file ini) dengan
-/// filter pocket ([activePocketProvider], selector header di 3 layar).
+/// Menggabungkan filter waktu, tipe, kategori (di file ini) dengan konteks
+/// aset aktif ([activeAssetProvider], chip‑selector header di Dashboard &
+/// Riwayat).
 final filteredTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
   ref,
 ) {
   final txAsync = ref.watch(transactionsStreamProvider);
   final period = ref.watch(historyPeriodFilterProvider);
   final typeFilter = ref.watch(historyTypeFilterProvider);
-  final assetFilter = ref.watch(historyAssetFilterProvider);
   final categoryFilter = ref.watch(historyCategoryFilterProvider);
-  final activePocket = ref.watch(activePocketProvider);
+  final activeAsset = ref.watch(activeAssetProvider);
 
   final range = historyPeriodRange(period, DateTime.now());
 
@@ -74,9 +71,8 @@ final filteredTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((
         if (d.isBefore(range.start) || !d.isBefore(range.end)) return false;
       }
       if (typeFilter != null && t.type != typeFilter) return false;
-      if (assetFilter != null && t.assetId != assetFilter) return false;
       if (categoryFilter != null && t.category != categoryFilter) return false;
-      if (activePocket != null && t.pocketId != activePocket) return false;
+      if (activeAsset != null && t.assetId != activeAsset) return false;
       return true;
     }).toList(),
   );

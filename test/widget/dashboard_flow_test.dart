@@ -4,13 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasbicara/core/language/language_providers.dart';
 import 'package:kasbicara/data/datasources/default_assets.dart';
 import 'package:kasbicara/data/datasources/default_categories.dart';
-import 'package:kasbicara/data/datasources/default_pockets.dart';
 import 'package:kasbicara/data/providers.dart';
 import 'package:kasbicara/main.dart';
 
 import '../fakes/fake_asset_repository.dart';
 import '../fakes/fake_category_repository.dart';
-import '../fakes/fake_pocket_repository.dart';
 import '../fakes/fake_transaction_repository.dart';
 
 void main() {
@@ -24,9 +22,6 @@ void main() {
           ),
           categoryRepositoryProvider.overrideWith(
             (ref) async => FakeCategoryRepository(defaultCategories),
-          ),
-          pocketRepositoryProvider.overrideWith(
-            (ref) async => FakePocketRepository(defaultPockets),
           ),
           assetRepositoryProvider.overrideWith(
             (ref) async => FakeAssetRepository(defaultAssets),
@@ -42,9 +37,7 @@ void main() {
       'menu tambah 3 cara', (tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Dashboard'));
-    await tester.pumpAndSettle();
-
+    // Dashboard adalah tab pertama & default.
     expect(find.text('Saldo Bersih'), findsOneWidget);
     expect(find.byKey(const Key('dashboard-net-balance')), findsOneWidget);
     expect(find.text('Transaksi Terakhir'), findsOneWidget);
@@ -65,9 +58,6 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Dashboard'));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.byKey(const Key('dashboard-add-fab')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('add-manual')));
@@ -82,8 +72,10 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    // Tambah lewat Beranda.
-    await tester.tap(find.text('Tambah manual'));
+    // Tambah lewat FAB Dashboard -> lembar "Tambah Data" -> Isi manual.
+    await tester.tap(find.byKey(const Key('dashboard-add-fab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-manual')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('amount-field')), '30000');
     await tester.tap(find.byKey(const Key('category-dropdown')));
@@ -93,12 +85,10 @@ void main() {
     await tester.tap(find.byKey(const Key('save-button')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Dashboard'));
-    await tester.pumpAndSettle();
-
+    // Form ditutup -> kembali ke Dashboard.
     expect(find.text('Belum ada transaksi'), findsNothing);
     expect(find.textContaining('Makanan & Minuman'), findsWidgets);
-    // Muncul di kartu saldo Beranda (IndexedStack) & baris transaksi terakhir.
+    // Muncul di kartu saldo bersih & baris transaksi terakhir.
     expect(find.textContaining('-Rp30.000'), findsWidgets);
   });
 }
