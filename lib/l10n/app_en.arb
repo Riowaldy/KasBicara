@@ -20,8 +20,16 @@
 
   "historyTitle": "History",
   "historyEmpty": "No transactions yet",
-  "historyMonthLabel": "Month",
   "historyCategoryLabel": "Category",
+  "historyPeriodLabel": "Time",
+  "historyPeriodDaily": "Today",
+  "historyPeriodWeekly": "This week",
+  "historyPeriodMonthly": "This month",
+  "historyPeriodYearly": "This year",
+  "historyPeriodAll": "All time",
+  "historyTypeLabel": "Type",
+  "historyTypeAll": "All types",
+  "historyAssetLabel": "Account",
   "filterAll": "All",
   "exportAllMonths": "All Months",
   "historyDeleteConfirmTitle": "Delete transaction?",
@@ -76,6 +84,8 @@
   "formCategoryError": "Choose a category",
   "formPocketLabel": "Pocket",
   "formPocketError": "Choose a pocket",
+  "formAssetLabel": "Account",
+  "formAssetError": "Choose an account",
   "formNoteLabel": "Note (optional)",
   "actionSave": "Save",
   "actionAdd": "Add",
@@ -101,6 +111,28 @@
   },
   "pocketDeleteConfirmReassign": "{count, plural, other{{count} transactions in pocket \"{name}\" will be moved to the Main Pocket, then the pocket is deleted.}}",
   "@pocketDeleteConfirmReassign": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+
+  "assetMainName": "Main Account",
+  "assetManageTitle": "Manage Accounts",
+  "assetManageHint": "Press and drag to reorder. The Main Account stays on top and cannot be deleted.",
+  "assetAddTitle": "Add Account",
+  "assetEditTitle": "Edit Account",
+  "assetNameLabel": "Account name",
+  "assetNameError": "Account name is required",
+  "assetIconLabel": "Icon",
+  "assetEmpty": "No extra accounts yet. Tap \"Add Account\" to create one.",
+  "assetDeleteConfirmTitle": "Delete account?",
+  "assetDeleteConfirmEmpty": "Account \"{name}\" will be deleted.",
+  "@assetDeleteConfirmEmpty": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "assetDeleteConfirmReassign": "{count, plural, other{{count} transactions in account \"{name}\" will be moved to the Main Account, then the account is deleted.}}",
+  "@assetDeleteConfirmReassign": {
     "placeholders": {
       "count": {"type": "int"},
       "name": {"type": "String"}

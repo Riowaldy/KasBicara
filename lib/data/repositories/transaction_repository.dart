@@ -25,6 +25,14 @@ abstract class TransactionRepository {
     required String toPocketId,
   });
 
+  /// Pindahkan semua transaksi dari satu aset ke aset lain — dipakai sebelum
+  /// menghapus aset. Memancarkan perubahan ke [watchAll] agar UI ikut
+  /// ter‑refresh.
+  Future<void> reassignAsset({
+    required String fromAssetId,
+    required String toAssetId,
+  });
+
   /// Stream reaktif — memancarkan ulang daftar transaksi setiap ada
   /// create/update/delete. Dipakai dashboard (Fase 4) agar auto-update (FR-6).
   Stream<List<Transaction>> watchAll();
@@ -75,6 +83,20 @@ class SqfliteTransactionRepository implements TransactionRepository {
       {'pocket_id': toPocketId},
       where: 'pocket_id = ?',
       whereArgs: [fromPocketId],
+    );
+    _notify();
+  }
+
+  @override
+  Future<void> reassignAsset({
+    required String fromAssetId,
+    required String toAssetId,
+  }) async {
+    await _db.update(
+      _table,
+      {'asset_id': toAssetId},
+      where: 'asset_id = ?',
+      whereArgs: [fromAssetId],
     );
     _notify();
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasbicara/data/models/asset_model.dart';
 import 'package:kasbicara/data/models/pocket_model.dart';
 import 'package:kasbicara/data/models/transaction_model.dart';
 import 'package:kasbicara/data/models/transaction_type.dart';
@@ -52,6 +53,16 @@ void main() {
     test('pocket_id bertahan lewat round-trip', () {
       final original = buildTransaction().copyWith(pocketId: 'kas-warung');
       expect(Transaction.fromMap(original.toMap()).pocketId, 'kas-warung');
+    });
+
+    test('baris pra-migrasi tanpa asset_id di-backfill ke Aset Utama', () {
+      final map = buildTransaction().toMap()..remove('asset_id');
+      expect(Transaction.fromMap(map).assetId, kMainAssetId);
+    });
+
+    test('asset_id bertahan lewat round-trip', () {
+      final original = buildTransaction().copyWith(assetId: 'bank-bca');
+      expect(Transaction.fromMap(original.toMap()).assetId, 'bank-bca');
     });
   });
 

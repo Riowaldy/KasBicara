@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasbicara/core/language/language_providers.dart';
+import 'package:kasbicara/data/datasources/default_assets.dart';
 import 'package:kasbicara/data/datasources/default_categories.dart';
 import 'package:kasbicara/data/datasources/default_pockets.dart';
 import 'package:kasbicara/data/providers.dart';
 import 'package:kasbicara/main.dart';
 
+import 'fakes/fake_asset_repository.dart';
 import 'fakes/fake_category_repository.dart';
 import 'fakes/fake_pocket_repository.dart';
 import 'fakes/fake_transaction_repository.dart';
@@ -33,6 +35,9 @@ void main() {
           ),
           pocketRepositoryProvider.overrideWith(
             (ref) async => FakePocketRepository(defaultPockets),
+          ),
+          assetRepositoryProvider.overrideWith(
+            (ref) async => FakeAssetRepository(defaultAssets),
           ),
         ],
         child: const KasBicaraApp(),

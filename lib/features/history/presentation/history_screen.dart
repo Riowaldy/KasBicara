@@ -10,13 +10,31 @@ import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/asset_selector.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/export_format_sheet.dart';
 import '../../../shared/widgets/pocket_selector.dart';
+import '../../assets/presentation/asset_manage_screen.dart';
 import '../../export/application/export_controller.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/history_providers.dart';
 import '../application/transaction_grouping.dart';
+
+/// Label ramah‑baca untuk [HistoryPeriod] (dipakai filter & label ekspor).
+String historyPeriodLabel(HistoryPeriod period, AppLocalizations l10n) {
+  switch (period) {
+    case HistoryPeriod.daily:
+      return l10n.historyPeriodDaily;
+    case HistoryPeriod.weekly:
+      return l10n.historyPeriodWeekly;
+    case HistoryPeriod.monthly:
+      return l10n.historyPeriodMonthly;
+    case HistoryPeriod.yearly:
+      return l10n.historyPeriodYearly;
+    case HistoryPeriod.all:
+      return l10n.historyPeriodAll;
+  }
+}
 
 /// Layar Riwayat Transaksi (PRD §6.6): dikelompokkan per tanggal (terbaru
 /// di atas), filter bulan & kategori, aksi edit/hapus, ekspor Excel/PDF
@@ -73,29 +91,50 @@ class HistoryScreen extends ConsumerWidget {
     final format = await showExportFormatSheet(context);
     if (format == null || !context.mounted) return;
 
+    final l10n = AppLocalizations.of(context)!;
     final transactions = ref.read(filteredTransactionsProvider).value ?? [];
-    final monthFilter = ref.read(historyMonthFilterProvider);
+    final period = ref.read(historyPeriodFilterProvider);
+    final typeFilter = ref.read(historyTypeFilterProvider);
+    final assetFilter = ref.read(historyAssetFilterProvider);
     final categoryFilter = ref.read(historyCategoryFilterProvider);
     final categories = ref.read(categoriesProvider).value ?? [];
+    final assets = ref.read(assetsStreamProvider).valueOrNull ?? const [];
     final activePocket = ref.read(activePocketProvider);
     final pockets = ref.read(pocketsStreamProvider).valueOrNull ?? const [];
 
-    final monthLabelText = monthFilter != null
-        ? date_utils.monthLabel(monthFilter)
-        : AppLocalizations.of(context)!.exportAllMonths;
+    final periodText = period == HistoryPeriod.all
+        ? l10n.exportAllMonths
+        : historyPeriodLabel(period, l10n);
+    final typeName = typeFilter == null
+        ? null
+        : (typeFilter == TransactionType.masuk
+              ? l10n.formTypeIn
+              : l10n.formTypeOut);
     final categoryName = categoryFilter == null
         ? null
         : categories
               .where((c) => c.id == categoryFilter)
               .map((c) => c.name)
               .firstOrNull;
+    final assetName = assetFilter == null
+        ? null
+        : assets
+              .where((a) => a.id == assetFilter)
+              .map((a) => assetDisplayName(a, l10n))
+              .firstOrNull;
     final pocketName = activePocket == null
         ? null
         : pockets
               .where((p) => p.id == activePocket)
-              .map((p) => pocketDisplayName(p, AppLocalizations.of(context)!))
+              .map((p) => pocketDisplayName(p, l10n))
               .firstOrNull;
-    final labelParts = [monthLabelText, ?categoryName, ?pocketName];
+    final labelParts = [
+      periodText,
+      ?typeName,
+      ?categoryName,
+      ?assetName,
+      ?pocketName,
+    ];
     final periodLabel = labelParts.join(' · ');
 
     if (!context.mounted) return;
@@ -115,70 +154,137 @@ class _FilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final monthsAsync = ref.watch(availableMonthsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
-    final selectedMonth = ref.watch(historyMonthFilterProvider);
+    final assetsAsync = ref.watch(assetsStreamProvider);
+    final selectedPeriod = ref.watch(historyPeriodFilterProvider);
+    final selectedType = ref.watch(historyTypeFilterProvider);
+    final selectedAsset = ref.watch(historyAssetFilterProvider);
     final selectedCategory = ref.watch(historyCategoryFilterProvider);
 
-    return Padding(
+    final categories = categoriesAsync.valueOrNull ?? const [];
+    final assets = assetsAsync.valueOrNull ?? const [];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Expanded(
-            child: monthsAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
-              data: (months) {
-                return DropdownButtonFormField<String?>(
-                  key: const Key('month-filter'),
-                  initialValue: selectedMonth,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: l10n.historyMonthLabel,
-                  ),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
-                    ...months.map(
-                      (m) => DropdownMenuItem(
-                        value: m,
-                        child: Text(date_utils.monthLabel(m)),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      ref.read(historyMonthFilterProvider.notifier).state =
-                          value,
-                );
-              },
-            ),
+          _FilterDropdown<HistoryPeriod>(
+            fieldKey: const Key('period-filter'),
+            label: l10n.historyPeriodLabel,
+            value: selectedPeriod,
+            items: [
+              for (final p in HistoryPeriod.values)
+                DropdownMenuItem(
+                  value: p,
+                  child: Text(historyPeriodLabel(p, l10n)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                ref.read(historyPeriodFilterProvider.notifier).state = value;
+              }
+            },
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: categoriesAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
-              data: (categories) {
-                return DropdownButtonFormField<String?>(
-                  key: const Key('category-filter'),
-                  initialValue: selectedCategory,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: l10n.historyCategoryLabel,
-                  ),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
-                    ...categories.map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      ref.read(historyCategoryFilterProvider.notifier).state =
-                          value,
-                );
-              },
+          _FilterDropdown<TransactionType?>(
+            fieldKey: const Key('type-filter'),
+            label: l10n.historyTypeLabel,
+            value: selectedType,
+            items: [
+              DropdownMenuItem(value: null, child: Text(l10n.historyTypeAll)),
+              DropdownMenuItem(
+                value: TransactionType.masuk,
+                child: Text(l10n.formTypeIn),
+              ),
+              DropdownMenuItem(
+                value: TransactionType.keluar,
+                child: Text(l10n.formTypeOut),
+              ),
+            ],
+            onChanged: (value) =>
+                ref.read(historyTypeFilterProvider.notifier).state = value,
+          ),
+          const SizedBox(width: 12),
+          _FilterDropdown<String?>(
+            fieldKey: const Key('asset-filter'),
+            label: l10n.historyAssetLabel,
+            value: assets.any((a) => a.id == selectedAsset)
+                ? selectedAsset
+                : null,
+            items: [
+              DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
+              ...assets.map(
+                (a) => DropdownMenuItem(
+                  value: a.id,
+                  child: Text(assetDisplayName(a, l10n)),
+                ),
+              ),
+            ],
+            onChanged: (value) =>
+                ref.read(historyAssetFilterProvider.notifier).state = value,
+          ),
+          const SizedBox(width: 12),
+          _FilterDropdown<String?>(
+            fieldKey: const Key('category-filter'),
+            label: l10n.historyCategoryLabel,
+            value: categories.any((c) => c.id == selectedCategory)
+                ? selectedCategory
+                : null,
+            items: [
+              DropdownMenuItem(value: null, child: Text(l10n.filterAll)),
+              ...categories.map(
+                (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+              ),
+            ],
+            onChanged: (value) =>
+                ref.read(historyCategoryFilterProvider.notifier).state = value,
+          ),
+          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: ActionChip(
+              avatar: const Icon(Icons.tune_rounded, size: 18),
+              label: Text(l10n.assetManageTitle),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AssetManageScreen()),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Dropdown filter ringkas dengan lebar tetap — dipakai di baris filter
+/// Riwayat yang bisa di‑scroll horizontal.
+class _FilterDropdown<T> extends StatelessWidget {
+  const _FilterDropdown({
+    required this.fieldKey,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 160,
+      child: DropdownButtonFormField<T>(
+        key: fieldKey,
+        initialValue: value,
+        isExpanded: true,
+        decoration: InputDecoration(labelText: label, isDense: true),
+        items: items,
+        onChanged: onChanged,
       ),
     );
   }

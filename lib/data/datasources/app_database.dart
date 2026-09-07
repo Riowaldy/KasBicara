@@ -5,7 +5,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+import '../models/asset_model.dart';
 import '../models/pocket_model.dart';
+import 'default_assets.dart';
 import 'default_categories.dart';
 import 'default_pockets.dart';
 
@@ -15,7 +17,10 @@ const _passphraseKey = 'kasbicara_db_passphrase';
 
 /// v2 (konsep "Pocket KasBicara" §04): tabel `pockets` + kolom
 /// `transactions.pocket_id`. Transaksi lama di‑backfill ke Pocket Utama.
-const _dbVersion = 2;
+///
+/// v3: tabel `assets` + kolom `transactions.asset_id`. Transaksi lama
+/// di‑backfill ke Aset Utama.
+const _dbVersion = 3;
 
 /// Membuka & mengelola koneksi database SQLite terenkripsi (SQLCipher).
 ///
@@ -74,7 +79,8 @@ class AppDatabase {
             date TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            pocket_id TEXT NOT NULL DEFAULT '$kMainPocketId'
+            pocket_id TEXT NOT NULL DEFAULT '$kMainPocketId',
+            asset_id TEXT NOT NULL DEFAULT '$kMainAssetId'
           )
         ''');
 
@@ -87,8 +93,12 @@ class AppDatabase {
         await db.execute(
           'CREATE INDEX idx_transactions_pocket ON transactions(pocket_id)',
         );
+        await db.execute(
+          'CREATE INDEX idx_transactions_asset ON transactions(asset_id)',
+        );
 
         await _createPocketsTable(db);
+        await _createAssetsTable(db);
 
         final batch = db.batch();
         for (final category in defaultCategories) {
@@ -105,10 +115,18 @@ class AppDatabase {
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
         }
+        for (final asset in defaultAssets) {
+          batch.insert(
+            'assets',
+            asset.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
+        }
         await batch.commit(noResult: true);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _migrateToV2(db);
+        if (oldVersion < 3) await _migrateToV3(db);
       },
     );
   }
@@ -159,6 +177,55 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_transactions_pocket '
       'ON transactions(pocket_id)',
+    );
+  }
+
+  /// Skema tabel `assets` — dipakai `onCreate` (instalasi baru) &
+  /// `_migrateToV3` (upgrade). Idempotent lewat `IF NOT EXISTS`.
+  Future<void> _createAssetsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS assets (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        is_default INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  /// Migrasi v2 → v3: tabel `assets` + kolom `transactions.asset_id`. Semua
+  /// langkah idempotent; sqflite membungkus `onUpgrade` dalam satu transaksi.
+  Future<void> _migrateToV3(Database db) async {
+    await _createAssetsTable(db);
+
+    for (final asset in defaultAssets) {
+      await db.insert(
+        'assets',
+        asset.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+
+    // Tambah kolom hanya bila belum ada (aman kalau migrasi terulang).
+    final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+    final hasAssetId = columns.any((c) => c['name'] == 'asset_id');
+    if (!hasAssetId) {
+      await db.execute(
+        "ALTER TABLE transactions ADD COLUMN asset_id TEXT NOT NULL "
+        "DEFAULT '$kMainAssetId'",
+      );
+    }
+
+    // DEFAULT sudah mengisi baris lama; UPDATE eksplisit sebagai jaring
+    // pengaman untuk baris yang mungkin lolos.
+    await db.update('transactions', {
+      'asset_id': kMainAssetId,
+    }, where: "asset_id IS NULL OR asset_id = ''");
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_asset '
+      'ON transactions(asset_id)',
     );
   }
 

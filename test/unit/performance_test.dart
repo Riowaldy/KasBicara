@@ -132,7 +132,10 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(transactionsStreamProvider.future);
-    container.read(historyMonthFilterProvider.notifier).state = '2024-06';
+    // Periode "semua waktu" agar seluruh dataset uji ikut difilter (bukan
+    // dipangkas oleh rentang tanggal relatif hari ini).
+    container.read(historyPeriodFilterProvider.notifier).state =
+        HistoryPeriod.all;
 
     final stopwatch = Stopwatch()..start();
     final filtered = container.read(filteredTransactionsProvider).value;

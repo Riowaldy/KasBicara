@@ -6,11 +6,14 @@ import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart' as date_utils;
 import '../../../core/utils/id_generator.dart';
 import '../../../core/voice/voice_parser.dart';
+import '../../../data/models/asset_model.dart';
 import '../../../data/models/pocket_model.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction_type.dart';
 import '../../../data/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/asset_icons.dart';
+import '../../../shared/widgets/asset_selector.dart';
 import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/pocket_icons.dart';
 import '../../../shared/widgets/pocket_selector.dart';
@@ -58,6 +61,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   late DateTime _date;
   String? _categoryId;
   late String _pocketId;
+  late String _assetId;
   bool _saving = false;
 
   /// True jika amount berasal dari draft suara yang TIDAK yakin — field
@@ -82,6 +86,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     // konteks "Semua Pocket". Deteksi pocket dari suara = Fase 2.
     _pocketId =
         initial?.pocketId ?? ref.read(activePocketProvider) ?? kMainPocketId;
+    // Aset tidak punya "konteks aktif" seperti pocket — default Aset Utama.
+    _assetId = initial?.assetId ?? kMainAssetId;
     _noteController = TextEditingController(
       text: initial?.note ?? draft?.note ?? '',
     );
@@ -117,26 +123,38 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+          child: Column(
             children: [
-              if (widget.voiceDraft != null) ...[
-                _buildVoiceReferenceCard(widget.voiceDraft!),
-                const SizedBox(height: 20),
-              ],
-              _buildTypeToggle(),
-              const SizedBox(height: 20),
-              _buildAmountField(),
-              const SizedBox(height: 16),
-              _buildDateField(),
-              const SizedBox(height: 16),
-              _buildCategoryField(),
-              const SizedBox(height: 16),
-              _buildPocketField(),
-              const SizedBox(height: 16),
-              _buildNoteField(),
-              const SizedBox(height: 32),
-              _buildActions(),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    if (widget.voiceDraft != null) ...[
+                      _buildVoiceReferenceCard(widget.voiceDraft!),
+                      const SizedBox(height: 20),
+                    ],
+                    _buildTypeToggle(),
+                    const SizedBox(height: 20),
+                    _buildAmountField(),
+                    const SizedBox(height: 16),
+                    _buildDateField(),
+                    const SizedBox(height: 16),
+                    _buildCategoryField(),
+                    const SizedBox(height: 16),
+                    _buildPocketField(),
+                    const SizedBox(height: 16),
+                    _buildAssetField(),
+                    const SizedBox(height: 16),
+                    _buildNoteField(),
+                  ],
+                ),
+              ),
+              // Aksi simpan/batal disematkan di bawah agar selalu terlihat
+              // tanpa perlu menggulir seluruh form.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: _buildActions(),
+              ),
             ],
           ),
         ),
@@ -366,6 +384,49 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
+  Widget _buildAssetField() {
+    final l10n = AppLocalizations.of(context)!;
+    final assetsAsync = ref.watch(assetsStreamProvider);
+
+    return assetsAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (error, _) => Text('Gagal memuat aset: $error'),
+      data: (assets) {
+        final validIds = assets.map((a) => a.id).toSet();
+        final value = validIds.contains(_assetId)
+            ? _assetId
+            : (validIds.contains(kMainAssetId)
+                  ? kMainAssetId
+                  : (assets.isNotEmpty ? assets.first.id : null));
+
+        return DropdownButtonFormField<String>(
+          key: const Key('asset-dropdown'),
+          initialValue: value,
+          decoration: InputDecoration(labelText: l10n.formAssetLabel),
+          items: assets
+              .map(
+                (a) => DropdownMenuItem(
+                  value: a.id,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(iconForAssetKey(a.icon), size: 18),
+                      const SizedBox(width: 8),
+                      Text(assetDisplayName(a, l10n)),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => setState(() {
+            if (v != null) _assetId = v;
+          }),
+          validator: (v) => v == null ? l10n.formAssetError : null,
+        );
+      },
+    );
+  }
+
   Widget _buildNoteField() {
     return TextFormField(
       key: const Key('note-field'),
@@ -420,6 +481,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           amount: amount,
           category: _categoryId,
           pocketId: _pocketId,
+          assetId: _assetId,
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
@@ -434,6 +496,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           amount: amount,
           category: _categoryId!,
           pocketId: _pocketId,
+          assetId: _assetId,
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),

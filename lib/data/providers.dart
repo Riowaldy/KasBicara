@@ -3,10 +3,12 @@ import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 
 import '../core/utils/date_utils.dart';
 import 'datasources/app_database.dart';
+import 'models/asset_model.dart';
 import 'models/category_model.dart';
 import 'models/pocket_model.dart';
 import 'models/transaction_model.dart';
 import 'models/transaction_type.dart';
+import 'repositories/asset_repository.dart';
 import 'repositories/category_repository.dart';
 import 'repositories/pocket_repository.dart';
 import 'repositories/transaction_repository.dart';
@@ -40,6 +42,14 @@ final pocketRepositoryProvider = FutureProvider<PocketRepository>((ref) async {
   return repo;
 });
 
+/// Repository aset (sumber dana / akun).
+final assetRepositoryProvider = FutureProvider<AssetRepository>((ref) async {
+  final db = await ref.watch(databaseProvider.future);
+  final repo = SqfliteAssetRepository(db);
+  ref.onDispose(repo.dispose);
+  return repo;
+});
+
 /// Seluruh transaksi, reaktif — otomatis terupdate setiap ada
 /// create/update/delete (FR-6). Dikonsumsi Beranda, Riwayat, & Dashboard.
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((
@@ -53,6 +63,13 @@ final transactionsStreamProvider = StreamProvider<List<Transaction>>((
 /// & layar Kelola Pocket.
 final pocketsStreamProvider = StreamProvider<List<Pocket>>((ref) async* {
   final repo = await ref.watch(pocketRepositoryProvider.future);
+  yield* repo.watchAll();
+});
+
+/// Seluruh aset, reaktif — dikonsumsi filter Riwayat, dropdown form, &
+/// layar Kelola Aset.
+final assetsStreamProvider = StreamProvider<List<Asset>>((ref) async* {
+  final repo = await ref.watch(assetRepositoryProvider.future);
   yield* repo.watchAll();
 });
 
@@ -87,6 +104,23 @@ final pocketBalanceProvider = Provider.family<AsyncValue<int>, String>((
   return txAsync.whenData(
     (list) => list
         .where((t) => t.pocketId == pocketId)
+        .fold<int>(
+          0,
+          (sum, t) =>
+              sum + (t.type == TransactionType.masuk ? t.amount : -t.amount),
+        ),
+  );
+});
+
+/// Saldo satu aset tertentu — dipakai layar Kelola Aset.
+final assetBalanceProvider = Provider.family<AsyncValue<int>, String>((
+  ref,
+  assetId,
+) {
+  final txAsync = ref.watch(transactionsStreamProvider);
+  return txAsync.whenData(
+    (list) => list
+        .where((t) => t.assetId == assetId)
         .fold<int>(
           0,
           (sum, t) =>
