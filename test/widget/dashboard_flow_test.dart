@@ -44,12 +44,23 @@ void main() {
     // Belum ada transaksi.
     expect(find.text('Belum ada transaksi'), findsOneWidget);
 
-    // FAB membuka bottom sheet dengan 3 pilihan.
+    // FAB membuka bottom sheet berisi carousel 3 cara; default "Lewat suara".
     await tester.tap(find.byKey(const Key('dashboard-add-fab')));
     await tester.pumpAndSettle();
-
+    expect(find.byKey(const Key('add-entry-pager')), findsOneWidget);
     expect(find.byKey(const Key('add-voice')), findsOneWidget);
+    // Ketiga tab bernama langsung terlihat.
+    expect(find.byKey(const Key('add-tab-voice')), findsOneWidget);
+    expect(find.byKey(const Key('add-tab-manual')), findsOneWidget);
+    expect(find.byKey(const Key('add-tab-scan')), findsOneWidget);
+
+    // Ketuk tab membuka halaman terkait.
+    await tester.tap(find.byKey(const Key('add-tab-manual')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('add-manual')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('add-tab-scan')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('add-scan')), findsOneWidget);
   });
 
@@ -59,6 +70,9 @@ void main() {
     await pumpApp(tester);
 
     await tester.tap(find.byKey(const Key('dashboard-add-fab')));
+    await tester.pumpAndSettle();
+    // Buka tab "Isi manual" pada carousel (default: Lewat suara).
+    await tester.tap(find.byKey(const Key('add-tab-manual')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('add-manual')));
     await tester.pumpAndSettle();
@@ -74,6 +88,9 @@ void main() {
 
     // Tambah lewat FAB Dashboard -> lembar "Tambah Data" -> Isi manual.
     await tester.tap(find.byKey(const Key('dashboard-add-fab')));
+    await tester.pumpAndSettle();
+    // Buka tab "Isi manual" pada carousel (default: Lewat suara).
+    await tester.tap(find.byKey(const Key('add-tab-manual')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('add-manual')));
     await tester.pumpAndSettle();

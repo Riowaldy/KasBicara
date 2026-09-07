@@ -64,7 +64,7 @@
   "addSheetManualSubtitle": "Type the amount and details yourself",
   "addSheetScan": "Scan receipt",
   "addSheetScanSubtitle": "Snap a receipt; amount & date fill in automatically",
-  "addSheetOr": "or",
+  "addSheetSwipeHint": "Swipe or tap an option above",
 
   "scanSourceCamera": "Camera",
   "scanSourceGallery": "Gallery",

@@ -64,7 +64,7 @@
   "addSheetManualSubtitle": "Taip sendiri jumlah dan butirannya",
   "addSheetScan": "Imbas resit",
   "addSheetScanSubtitle": "Foto resit, jumlah & tarikh diisi automatik",
-  "addSheetOr": "atau",
+  "addSheetSwipeHint": "Leret atau ketik pilihan di atas",
 
   "scanSourceCamera": "Kamera",
   "scanSourceGallery": "Galeri",

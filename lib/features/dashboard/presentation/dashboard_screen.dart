@@ -91,9 +91,9 @@ class DashboardScreen extends ConsumerWidget {
 
 enum _AddAction { voice, manual, scan }
 
-/// Lembar "Tambah Data" (PRD §6.5). Tombol mic dibuat paling menonjol di
-/// puncak; di bawahnya "Isi manual" dan "Pindai struk" tampil berdampingan
-/// sebagai kartu yang bisa digeser-geser seperti slide show.
+/// Lembar "Tambah Data" (PRD §6.5). Ketiga cara — Lewat suara, Isi manual,
+/// Pindai struk — tampil bersama: baris tab bernama di atas + carousel yang
+/// bisa digeser. Halaman pertama (default) tetap "Lewat suara".
 class _AddEntrySheet extends StatefulWidget {
   const _AddEntrySheet();
 
@@ -102,7 +102,7 @@ class _AddEntrySheet extends StatefulWidget {
 }
 
 class _AddEntrySheetState extends State<_AddEntrySheet> {
-  final _pageController = PageController(viewportFraction: 0.82);
+  final _pageController = PageController(viewportFraction: 0.84);
   int _page = 0;
 
   @override
@@ -111,12 +111,39 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
     super.dispose();
   }
 
+  void _goTo(int i) {
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
+    final tabs = [
+      (
+        key: const Key('add-tab-voice'),
+        icon: Icons.mic_rounded,
+        label: l10n.addSheetVoice,
+      ),
+      (
+        key: const Key('add-tab-manual'),
+        icon: Icons.edit_rounded,
+        label: l10n.addSheetManual,
+      ),
+      (
+        key: const Key('add-tab-scan'),
+        icon: Icons.receipt_long_rounded,
+        label: l10n.addSheetScan,
+      ),
+    ];
+
     final slides = [
+      _VoiceSlide(onTap: () => Navigator.of(context).pop(_AddAction.voice)),
       _AddSlideCard(
         itemKey: const Key('add-manual'),
         icon: Icons.edit_rounded,
@@ -135,48 +162,187 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 4, 0, 24),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.addSheetTitle, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 20),
-            // Tombol mic — paling menonjol.
-            Semantics(
-              button: true,
-              label: l10n.addSheetVoice,
-              child: GestureDetector(
-                key: const Key('add-voice'),
-                onTap: () => Navigator.of(context).pop(_AddAction.voice),
-                child: Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    color: AppColors.gold,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.gold.withValues(alpha: 0.45),
-                        blurRadius: 28,
-                        spreadRadius: 2,
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.inkBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(l10n.addSheetTitle, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 16),
+            // Tab ikon — ringkas; yang aktif melebar menampilkan namanya.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < tabs.length; i++)
+                    _AddModeTab(
+                      tabKey: tabs[i].key,
+                      icon: tabs[i].icon,
+                      label: tabs[i].label,
+                      selected: _page == i,
+                      onTap: () => _goTo(i),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Carousel — bisa digeser ke kiri/kanan.
+            SizedBox(
+              height: 236,
+              child: PageView(
+                key: const Key('add-entry-pager'),
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _page = i),
+                children: slides,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.addSheetSwipeHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Satu tab di puncak lembar "Tambah Data": hanya ikon saat tidak aktif,
+/// melebar jadi ikon + nama saat aktif.
+class _AddModeTab extends StatelessWidget {
+  const _AddModeTab({
+    required this.tabKey,
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Key tabKey;
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Tooltip(
+        message: label,
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          child: Material(
+            color: selected ? AppColors.gold : AppColors.inkSurfaceAlt,
+            borderRadius: BorderRadius.circular(22),
+            child: InkWell(
+              key: tabKey,
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(22),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: selected ? 16 : 13,
+                  vertical: 11,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 20,
+                      color: selected
+                          ? AppColors.inkBackground
+                          : AppColors.textMuted,
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.inkBackground,
+                        ),
                       ),
                     ],
-                  ),
-                  child: const Icon(
-                    Icons.mic_rounded,
-                    size: 52,
-                    color: AppColors.inkBackground,
-                  ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 14),
-            Text(l10n.addSheetVoice, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kartu "Lewat suara" di dalam carousel — mic emas menonjol + contoh ucapan.
+class _VoiceSlide extends StatelessWidget {
+  const _VoiceSlide({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Material(
+        color: AppColors.inkSurfaceAlt,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          key: const Key('add-voice'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Semantics(
+            button: true,
+            label: l10n.addSheetVoice,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gold.withValues(alpha: 0.45),
+                          blurRadius: 24,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.mic_rounded,
+                      size: 42,
+                      color: AppColors.inkBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l10n.addSheetVoice, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 6),
                   Text(
                     l10n.homeVoiceExampleTitle,
                     style: theme.textTheme.bodySmall,
@@ -199,48 +365,7 @@ class _AddEntrySheetState extends State<_AddEntrySheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                const Expanded(child: Divider(indent: 24)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    l10n.addSheetOr,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ),
-                const Expanded(child: Divider(endIndent: 24)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Slide show "Isi manual" / "Pindai struk" — digeser-geser.
-            SizedBox(
-              height: 176,
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (i) => setState(() => _page = i),
-                children: slides,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < slides.length; i++)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: _page == i ? 22 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: _page == i ? AppColors.gold : AppColors.inkBorder,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

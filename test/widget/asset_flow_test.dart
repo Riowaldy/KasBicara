@@ -66,6 +66,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dashboard-add-fab')));
     await tester.pumpAndSettle();
+    // Buka tab "Isi manual" pada carousel (default: Lewat suara).
+    await tester.tap(find.byKey(const Key('add-tab-manual')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('add-manual')));
     await tester.pumpAndSettle();
 

@@ -67,7 +67,7 @@
   "addSheetManualSubtitle": "Ketik sendiri jumlah dan detailnya",
   "addSheetScan": "Pindai struk",
   "addSheetScanSubtitle": "Foto struk, jumlah & tanggal terisi otomatis",
-  "addSheetOr": "atau",
+  "addSheetSwipeHint": "Geser atau ketuk pilihan di atas",
 
   "scanSourceCamera": "Kamera",
   "scanSourceGallery": "Galeri",
