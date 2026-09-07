@@ -18,10 +18,20 @@ enum AppLanguage {
 /// Pilihan bahasa di layar Setelan. `auto` = ikuti detektor + locale perangkat.
 enum LanguagePreference { auto, id, ms, en }
 
-/// Petakan locale perangkat ke [AppLanguage] — konsep §03 tangga langkah 3:
-/// `id*` -> id, `ms*` -> ms, selain itu -> en (pengguna di luar regional
-/// Indonesia & Malaysia).
+/// Petakan locale perangkat ke [AppLanguage] mengikuti lokasi/regional user —
+/// konsep §03 tangga langkah 3:
+///
+/// 1. Negara perangkat: `ID` -> id, `MY` -> ms (menang lebih dulu agar user di
+///    Indonesia/Malaysia tetap dapat bahasa lokal walau bahasa ponselnya lain).
+/// 2. Bahasa perangkat: `id*` -> id, `ms*` -> ms.
+/// 3. Di luar keduanya -> en.
 AppLanguage appLanguageFromLocale(Locale locale) {
+  switch (locale.countryCode) {
+    case 'ID':
+      return AppLanguage.id;
+    case 'MY':
+      return AppLanguage.ms;
+  }
   switch (locale.languageCode) {
     case 'id':
       return AppLanguage.id;

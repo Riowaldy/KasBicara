@@ -5,9 +5,8 @@ import '../../../core/language/app_language.dart';
 import '../../../core/language/language_providers.dart';
 import '../../../l10n/app_localizations.dart';
 
-/// Pemilih bahasa (konsep "Trilingual KasBicara" §08): Otomatis / Indonesia /
-/// Melayu / English. Memilih bahasa spesifik mengunci ketiga lapis dan
-/// mematikan detektor.
+/// Pemilih bahasa (konsep "Trilingual KasBicara" §08): Indonesia / Melayu /
+/// English. Memilih bahasa mengunci ketiga lapis dan mematikan detektor.
 Future<void> showLanguageDialog(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context)!;
 
@@ -35,10 +34,6 @@ Future<void> showLanguageDialog(BuildContext context, WidgetRef ref) {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    RadioListTile<LanguagePreference>(
-                      value: LanguagePreference.auto,
-                      title: Text(l10n.settingsLanguageAuto),
-                    ),
                     RadioListTile<LanguagePreference>(
                       value: LanguagePreference.id,
                       title: Text(l10n.languageNameId),

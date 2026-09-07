@@ -13,9 +13,10 @@ final _secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage();
 });
 
-/// Pilihan bahasa user (persist). Default `auto`; nilai tersimpan dimuat
-/// asynchronous setelah frame pertama agar pembukaan aplikasi tetap < 2 detik
-/// (NFR PRD §8) — sama seperti alasan `main.dart` menunda kerja berat.
+/// Pilihan bahasa user (persist). Default `auto` = ikut lokasi/locale perangkat
+/// (Indonesia -> id, Malaysia -> ms, di luar keduanya -> en). Nilai tersimpan
+/// dimuat asynchronous setelah frame pertama agar pembukaan aplikasi tetap
+/// < 2 detik (NFR PRD §8) — sama seperti alasan `main.dart` menunda kerja berat.
 class LanguagePreferenceNotifier extends StateNotifier<LanguagePreference> {
   LanguagePreferenceNotifier(this._storage) : super(LanguagePreference.auto) {
     _load();
